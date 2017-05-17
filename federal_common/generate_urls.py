@@ -64,7 +64,7 @@ def generate_urls(*model_sets):
                         self.filter_fields = [
                             field.name
                             for field in self.queryset.model._meta.local_fields
-                            if not isinstance(field, fields.files.FileField)
+                            if not isinstance(field, fields.related.RelatedField)
                         ]
 
                     def filter_queryset(self, *args, **kwargs):
