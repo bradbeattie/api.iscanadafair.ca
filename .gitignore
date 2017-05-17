@@ -2,13 +2,13 @@
 *.sql
 *.sqlite
 *.swp
-*.xz
 .collected_static
-.env/
+.env*
 .ipynb_checkpoints/
 .uploaded_media
 .~lock*
 Python-3.*
+greptargets/
 local_settings.py
 my.cnf
 photos/*

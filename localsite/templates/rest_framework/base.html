@@ -16,7 +16,7 @@
           <link rel="stylesheet" type="text/css" href="{% static "theme-application/css/toolkit.min.css" %}"/>
         {% endblock %}
         <style>
-            .panel-body { overflow: hidden; text-overflow: ellipsis; }
+            .breadcrumb { background: #eee; }
             .pagination { margin: 0 !important; }
             nav { line-height: 1em; }
         </style>
@@ -45,52 +45,35 @@
         <div id="content">
             <div class="content-main">
                 <h1>{{ name }}</h1>
-                  <div class="description">
-                    {% block description %}
-                      {{ description }}
-                    {% endblock %}
-                  </div>
+                  <div class="description">{% block description %}{{ description }}{% endblock %}</div>
 
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <code><strong>{{ request.method }}</strong> {{ request.get_full_path }}</code>
-                </div>
-                <div class="panel-body" style="white-space: pre-line"><span class="meta nocode"><b>HTTP {{ response.status_code }} {{ response.status_text }}</b>{% autoescape off %}{% for key, val in response_headers.items %}
-                    <b>{{ key }}:</b> <span class="lit">{{ val|break_long_headers|urlize_quoted_links }}</span>{% endfor %}</span>{% endautoescape %}</div>
-                <div class="panel-body" style="white-space: pre; font-family: monospace">{% autoescape off %}{{ content|urlize_quoted_links }}{% endautoescape %}</div>
-                  {% if paginator %}
-                    <div class="panel-footer" style="text-align: right">
-                        <nav>
-                          {% get_pagination_html paginator %}
-                        </nav>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <code><strong>{{ request.method }}</strong> {{ request.get_full_path }}</code>
                     </div>
-                  {% endif %}
-            </div>
-                    
-
-
+                    <div class="panel-body" style="white-space: pre-line"><span class="meta nocode"><b>HTTP {{ response.status_code }} {{ response.status_text }}</b>{% autoescape off %}{% for key, val in response_headers.items %}
+                        <b>{{ key }}:</b> <span class="lit">{{ val|break_long_headers|urlize_quoted_links }}</span>{% endfor %}</span>{% endautoescape %}</div>
+                    <div class="panel-body" style="white-space: pre; font-family: monospace; overflow: auto">{% autoescape off %}{{ content|urlize_quoted_links }}{% endautoescape %}</div>
+                      {% if paginator %}
+                        <div class="panel-footer" style="text-align: right">
+                            <nav>
+                              {% get_pagination_html paginator %}
+                            </nav>
+                        </div>
+                      {% endif %}
+                </div>
             </div>
         </div><!-- /.content -->
       </div><!-- /.container -->
     </div><!-- ./wrapper -->
 
-    {% if filter_form %}
-      {{ filter_form }}
-    {% endif %}
-
     {% block script %}
-      <script>
-        window.drf = {
-          csrfHeaderName: "{{ csrf_header_name|default:'X-CSRFToken' }}",
-          csrfCookieName: "{{ csrf_cookie_name|default:'csrftoken' }}"
-        };
-      </script>
       <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-      <script src="{% static "theme-application/js/toolkit.min.js" %}"></script>
+      <!-- Not really in use at all: <script src="{% static "theme-application/js/toolkit.min.js" %}"></script> -->
       <script src="{% static "marked.min.js" %}"></script>
       <script>
         $(".description").each(function() {
-            $(this).html(marked($(this).html().replace(/\n\s+/g, "\n")));
+            $(this).html(marked($(this).html()));
         })
       </script>
     {% endblock %}
