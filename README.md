@@ -11,7 +11,7 @@ across various sources in a variety of formats:
 * [LEGISinfo](http://www.parl.ca/LegisInfo)
 
 So I'm trying to tackle this problem by collecting these sources into a relational database. I figured
-while I'm at it, I might as well expose the data for others.
+while I'm at it, I might as well expose the data for others via [https://api.iscanadafair.ca](https://api.iscanadafair.ca).
 
 * [The project's source code is hosted on GitHub](https://github.com/bradbeattie/canadian-parlimentarty-data) and goes into the details of how I'm scraping all this data.
 * [Download a snapshot of this database](https://github.com/bradbeattie/canadian-parliamentary-data/raw/master/deployed.sql.xz) if you're intending on making heavy use of the data.
