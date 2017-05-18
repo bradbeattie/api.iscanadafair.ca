@@ -1,5 +1,5 @@
-from django.db.models import fields
 from django.conf.urls import url, include
+from django.db.models import fields
 from django.db.models.base import ModelBase
 from django.utils.text import slugify
 from django_extensions.db.fields.json import JSONField as JSONModelField
@@ -7,11 +7,40 @@ from rest_framework import filters
 from rest_framework import serializers, viewsets
 from rest_framework.fields import JSONField as JSONSerializerField
 from rest_framework_nested import routers as nested_routers
+import django_filters
 
 
 class ChoicesSerializerField(serializers.SerializerMethodField):
     def to_representation(self, value):
         return getattr(value, "get_{field_name}_display".format(field_name=self.field_name))()
+
+
+COMPARISONS = set(["exact", "gt", "gte", "lt", "lte"])
+
+def get_field_lookups(field):
+    lookups = set(["exact"])
+    if isinstance(field, fields.CharField):
+        lookups.update(set([
+            "contains", "icontains",
+            "regex", "iregex",
+            "startswith", "istartswith",
+            "endswith", "iendswith",
+        ]))
+    if isinstance(field, (fields.DecimalField, fields.IntegerField, fields.DateField)):
+        lookups.update(COMPARISONS)
+    if isinstance(field, fields.DateField):
+        for prefix in ("year", "month", "day", "week", "week_day"):
+            lookups.update(
+                "__".join(filter(None, (prefix, comparison)))
+                for comparison in COMPARISONS
+            )
+    if isinstance(field, fields.DateTimeField):
+        for prefix in ("hour", "minute", "second"):
+            lookups.update(
+                "__".join(filter(None, (prefix, comparison)))
+                for comparison in COMPARISONS
+            )
+    return lookups
 
 
 def generate_urls(*model_sets):
@@ -48,11 +77,21 @@ def generate_urls(*model_sets):
                             for field in model_class._meta.local_fields
                         ]
 
+                class Filter(django_filters.FilterSet):
+                    class Meta:
+                        model = model_class
+                        fields = {
+                            field.name: get_field_lookups(field)
+                            for field in model_class._meta.local_fields
+                            if not isinstance(field, fields.related.RelatedField) and not isinstance(field, fields.files.FileField)
+                        }
+
                 # ViewSets define the view behavior.
                 class ViewSet(viewsets.ModelViewSet):
                     queryset = model_class.objects.all()
                     serializer_class = Serializer
                     filter_backends = (filters.SearchFilter, filters.DjangoFilterBackend)
+                    filter_class = Filter
 
                     def __init__(self, *args, **kwargs):
                         super().__init__(*args, **kwargs)
@@ -60,11 +99,6 @@ def generate_urls(*model_sets):
                             field.name
                             for field in self.queryset.model._meta.local_fields
                             if isinstance(field, fields.CharField)
-                        ]
-                        self.filter_fields = [
-                            field.name
-                            for field in self.queryset.model._meta.local_fields
-                            if not isinstance(field, fields.related.RelatedField) and not isinstance(field, fields.files.FileField)
                         ]
 
                     def filter_queryset(self, *args, **kwargs):
