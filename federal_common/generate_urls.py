@@ -19,7 +19,7 @@ COMPARISONS = set(["exact", "gt", "gte", "lt", "lte"])
 
 def get_field_lookups(field):
     lookups = set(["exact"])
-    if isinstance(field, fields.CharField):
+    if isinstance(field, (fields.CharField, JSONModelField)):
         lookups.update(set([
             "contains", "icontains",
             "regex", "iregex",
@@ -72,7 +72,7 @@ def generate_urls(*model_sets):
 
                     class Meta:
                         model = model_class
-                        fields = [
+                        fields = ["url"] + [
                             field.name
                             for field in model_class._meta.local_fields
                         ]
