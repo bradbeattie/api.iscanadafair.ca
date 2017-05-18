@@ -48,6 +48,7 @@ class Session(LinksMixin, models.Model):
 
         * The Library of Parliament publishes profiles for each parliament, including details on each session: http://www.lop.parl.gc.ca/parlinfo/Lists/Parliament.aspx
     """
+    slug = models.SlugField(max_length=200, primary_key=True)
     parliament = models.ForeignKey(Parliament, related_name="sessions")
     number = models.PositiveSmallIntegerField(db_index=True)
     date_start = models.DateField(db_index=True)

@@ -1,7 +1,6 @@
 from django.db import models
 from federal_common.models import NamesMixin, LinksMixin
 from parliaments import models as parliament_models
-from django_extensions.db.fields import json
 
 
 class Committee(NamesMixin, LinksMixin, models.Model):
@@ -30,6 +29,13 @@ class Bill(NamesMixin, LinksMixin, models.Model):
         ## Data sources
 
         * Parliament lists recent bills at LEGISinfo: http://www.parl.gc.ca/LegisInfo/
+
+        ## Filtering examples
+
+        * [Bills from the 42nd parliament](?slug__startswith=42)
+        * [Bills from the 42nd parliament's 1st session](/sessions/42-1/bills/)
+        * [Bills from the senate](?slug__contains=s)
+        * [Bills that mention Vancouver](?names__icontains=vancouver)
     """
     session = models.ForeignKey(parliament_models.Session, related_name="bills")
     committees = models.ManyToManyField(Committee, related_name="bills")

@@ -43,6 +43,7 @@ class Command(BaseCommand):
                 date_end = cells[1].text.split(" - ")[1].strip()
                 session_number = int(REVERSE_ORDINAL.sub(r"\1", cells[0].text.strip()))
                 models.Session.objects.get_or_create(
+                    slug="{}-{}".format(parliament.number, session_number),
                     parliament=parliament,
                     number=session_number,
                     date_start=dateparse(date_start),

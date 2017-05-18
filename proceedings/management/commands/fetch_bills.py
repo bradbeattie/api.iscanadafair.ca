@@ -52,11 +52,10 @@ class Command(BaseCommand):
             )))
             bill = models.Bill(
                 session=session,
-                slug=slugify("-".join(map(lambda x: str(x), (
-                    session.parliament.number,
-                    session.number,
+                slug=slugify("{}-{}".format(
+                    session.slug,
                     bill_number,
-                )))),
+                )),
             )
             for lang in (EN, FR):
                 bill.links[lang][sources.NAME_LEGISINFO[lang]] = url_tweak(

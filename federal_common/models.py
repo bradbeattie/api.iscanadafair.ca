@@ -15,7 +15,7 @@ class LinksMixin(models.Model):
 
 
 class NamesMixin(models.Model):
-    slug = models.SlugField(max_length=200, unique=True)
+    slug = models.SlugField(max_length=200, primary_key=True)
     names = json.JSONField()
 
     class Meta:
