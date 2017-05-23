@@ -1,82 +1,74 @@
-{% load staticfiles %}
-{% load i18n %}
-{% load rest_framework %}
-
-<!DOCTYPE html>
+{% load staticfiles i18n rest_framework %}<!DOCTYPE html>
 <html>
-  <head>
-    {% block head %}
-      {% block meta %}
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        <meta name="robots" content="NONE,NOARCHIVE" />
-      {% endblock %}
-      <title>{% block title %}{% if name %}{{ name }} –  {% endif %}Canadian Parliamentary Data API{% endblock %}</title>
-      {% block style %}
-        {% block bootstrap_theme %}
-          <link rel="stylesheet" type="text/css" href="{% static "theme-application/css/toolkit.min.css" %}"/>
+    <head>
+        {% block head %}
+            {% block meta %}
+                <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+                <meta name="robots" content="NONE,NOARCHIVE" />
+            {% endblock %}
+            <title>{% block title %}{% if name %}{{ name }} –  {% endif %}Canadian Parliamentary Data API{% endblock %}</title>
+            {% block style %}
+                <link rel="stylesheet" type="text/css" href="{% static "theme-application/css/toolkit.min.css" %}"/>
+                <style>
+                    #description { padding: 0 15px 15px; }
+                    #response { margin-bottom: 15px; font-family: monospace; overflow: auto; }
+                    #response .panel-heading { font-weight: bold; }
+                    #response-content { white-space: pre; padding: 15px; }
+                    .container { background: rgba(255,255,255,0.9); }
+                    .container, .breadcrumb { border-radius: 0 0 4px 4px; }
+                    .hljs { color: #ccc; }
+                    .hljs-attr { color: #c33; }
+                    .hljs-string, .hljs-number { color: #000; }
+                    .pagination { margin: 0 !important; }
+                    body { background: url({% static "img/parliament-back.jpg" %}) center no-repeat; background-size: cover; background-attachment: fixed; }
+                    nav { line-height: 1em; }
+                </style>
+            {% endblock %}
         {% endblock %}
-        <style>
-            .pagination { margin: 0 !important; }
-            nav { line-height: 1em; }
-        </style>
-      {% endblock %}
-    {% endblock %}
-  </head>
-
-  {% block body %}
-  <body class="{% block bodyclass %}{% endblock %}">
-
-    <div class="wrapper">
-      <div class="container">
-        {% block breadcrumbs %}
-          <ul class="breadcrumb">
-            {% for breadcrumb_name, breadcrumb_url in breadcrumblist %}
-              {% if forloop.last %}
-                <li class="active"><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
-              {% else %}
-                <li><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
-              {% endif %}
-            {% endfor %}
-          </ul>
-        {% endblock %}
-
-        <!-- Content -->
-        <div id="content">
-            <div class="content-main">
-                <h1>{{ name }}</h1>
-                  <div class="description">{% block description %}{{ description }}{% endblock %}</div>
-
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <code><strong>{{ request.method }}</strong> {{ request.get_full_path }}</code>
+    </head>
+    {% block body %}
+        <body class="{% block bodyclass %}{% endblock %}">
+            <div class="wrapper">
+                <div class="container">
+                    {% block breadcrumbs %}
+                        <ul class="breadcrumb">
+                            {% for breadcrumb_name, breadcrumb_url in breadcrumblist %}
+                                {% if forloop.last %}
+                                    <li class="active"><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
+                                {% else %}
+                                    <li><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% endblock %}
+                    <div id="description">
+                        <h1>{{ name }}</h1>
+                        <div class="markdown">{% block description %}{{ description }}{% endblock %}</div>
                     </div>
-                    <div class="panel-body" style="white-space: pre-line"><span class="meta nocode"><b>HTTP {{ response.status_code }} {{ response.status_text }}</b>{% autoescape off %}{% for key, val in response_headers.items %}
-                        <b>{{ key }}:</b> <span class="lit">{{ val|break_long_headers|urlize_quoted_links }}</span>{% endfor %}</span>{% endautoescape %}</div>
-                    <div class="panel-body" style="white-space: pre; font-family: monospace; overflow: auto">{% autoescape off %}{{ content|urlize_quoted_links }}{% endautoescape %}</div>
-                      {% if paginator %}
-                        <div class="panel-footer" style="text-align: right">
-                            <nav>
-                              {% get_pagination_html paginator %}
-                            </nav>
-                        </div>
-                      {% endif %}
+                    <div id="response" class="panel panel-default">
+                        <div class="panel-heading">{{ request.method }}</strong> {{ request.get_full_path }}</div>
+                        <div id="response-content">{% autoescape off %}{{ content|urlize_quoted_links }}{% endautoescape %}</div>
+                        {% if paginator %}
+                            <div class="panel-footer" style="text-align: right">
+                                <nav>{% get_pagination_html paginator %}</nav>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-        </div><!-- /.content -->
-      </div><!-- /.container -->
-    </div><!-- ./wrapper -->
-
-    {% block script %}
-      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-      <!-- Not really in use at all: <script src="{% static "theme-application/js/toolkit.min.js" %}"></script> -->
-      <script src="{% static "marked.min.js" %}"></script>
-      <script>
-        $(".description").each(function() {
-            $(this).html(marked($(this).html()));
-        })
-      </script>
+            {% block script %}
+                <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+                <script src="{% static "marked.min.js" %}"></script>
+                <script src="{% static "highlight.js/highlight.pack.js" %}"></script>
+                <script>
+                    $(".markdown").each(function() {
+                        $(this).html(marked($(this).html()));
+                    })
+                    $("#response-content").each(function(i, block) {
+                        hljs.highlightBlock(block);
+                    });
+                </script>
+            {% endblock %}
+        </body>
     {% endblock %}
-
-  </body>
-  {% endblock %}
 </html>
