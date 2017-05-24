@@ -17,9 +17,9 @@ def get_view_name(cls, suffix=None):
             with open("README.md", "r") as f:
                 cls.view_name = f.readline()[1:]
         elif suffix == "List":
-            cls.view_name = cls.queryset.model._meta.verbose_name_plural.title()
+            return cls.queryset.model._meta.verbose_name_plural.title()
         elif suffix == "Instance":
-            cls.view_name = cls.queryset.model._meta.verbose_name.title()
+            return cls.queryset.model._meta.verbose_name.title()
         else:
             raise Exception("Unexpected view suffix", suffix)
     return cls.view_name
