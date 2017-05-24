@@ -107,6 +107,11 @@ class Riding(NamesMixin, LinksMixin, models.Model):
         * Elections Canada lists current federal electoral districts: http://www.elections.ca/Scripts/vis/SearchProvinces?L=e&PROV=CA&PROVID=99999&QID=-1&PAGEID=20
         * The Library of Parliament lists ridings since confederation: http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=R
         * Parliament lists current constituencies: http://www.parl.gc.ca/Parliamentarians/en/constituencies
+
+        ## Filtering examples
+
+        * [Ridings in British Columbia](?slug__startswith=british-columbia-)
+        * [Ridings named like Vancouver](?names__icontains=vancouver)
     """
     province = models.ForeignKey(Province, related_name="ridings")
     related_historically = models.ManyToManyField("self", blank=True)

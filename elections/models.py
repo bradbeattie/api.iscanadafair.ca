@@ -67,7 +67,7 @@ class ElectionRiding(models.Model):
     """
         ## Data sources
 
-        * Early Canadiana Online has the relevant sessional papers from the 1st through 14th General Election.
+        * [Early Canadiana Online](http://eco.canadiana.ca/) has the relevant sessional papers from the 1st through 14th General Election.
         * Elections Canada can upon specific email request send a DVD containing the relevant reports for the 13th through 34th General Election.
         * Elections Canada makes the 35th General Election results available in hard copy: http://www.elections.ca/pub_01.aspx?lang=e (warning: it's physically massive)
         * Elections Canada makes the 36th through 42nd General Election results available for download: http://www.elections.ca/content.aspx?section=ele&dir=pas&document=index&lang=e
