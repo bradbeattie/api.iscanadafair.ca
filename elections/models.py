@@ -12,9 +12,9 @@ class GeneralElection(models.Model):
     """
         ## Data sources
 
-        * The Library of Parliament lists all general elections, their ridings, and their candidates: http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=G
-        * Elections Canada provides federally-scoped per-election population data: http://www.elections.ca/content.aspx?section=ele&dir=turn&document=index&lang=e
-        * Wikipedia lists all general elections along with party performance summaries: https://en.wikipedia.org/wiki/List_of_Canadian_federal_general_elections
+        * [Library of Parliament's General Elections](http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=G)
+        * [Elections Canada's Voter Turnout at Federal Elections and Referendums](http://www.elections.ca/content.aspx?section=ele&dir=turn&document=index&lang=e)
+        * [Wikipedia's List of Canadian federal general elections](https://en.wikipedia.org/wiki/List_of_Canadian_federal_general_elections)
     """
     number = models.PositiveSmallIntegerField(primary_key=True)
     parliament = models.OneToOneField(parliament_models.Parliament, related_name="general_election")
@@ -44,7 +44,7 @@ class ByElection(models.Model):
     """
         ## Data sources
 
-        * The Library of Parliament lists all by-elections, their ridings, and their candidates: http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=B
+        * [Library of Parliament's By-Elections](http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=B)
     """
     parliament = models.ForeignKey(parliament_models.Parliament, related_name="by_elections")
     date = models.DateField()
@@ -67,12 +67,13 @@ class ElectionRiding(models.Model):
     """
         ## Data sources
 
-        * [Early Canadiana Online](http://eco.canadiana.ca/) has the relevant sessional papers from the 1st through 14th General Election.
-        * Elections Canada can upon specific email request send a DVD containing the relevant reports for the 13th through 34th General Election.
-        * Elections Canada makes the 35th General Election results available in hard copy: http://www.elections.ca/pub_01.aspx?lang=e (warning: it's physically massive)
-        * Elections Canada makes the 36th through 42nd General Election results available for download: http://www.elections.ca/content.aspx?section=ele&dir=pas&document=index&lang=e
-        * I've personally made an effort to catalogue the relevant columns I could not otherwise infer from the Library of Parliament's historical records (population, electors on the list, rejected ballots): https://github.com/bradbeattie/canadian-parlimentarty-data/raw/master/riding-populations-electors-and-rejected-ballots.ods
-        * The Library of Parliament provides general election and by-election candidate breakdowns: http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=G
+        * [Early Canadiana Online's Sessional Papers (1st through 14th Parliament, paywall)](http://eco.canadiana.ca/)
+        * [Elections Canada](http://www.elections.ca/)
+          * [Raw data (38th through 42nd General Elections)](http://www.elections.ca/content.aspx?section=ele&dir=pas&document=index&lang=e)
+          * [HTML data (36th and 37th General Elections)](http://www.elections.ca/content.aspx?section=ele&dir=pas&document=index&lang=e)
+          * [Hardy copy (35th General Election, warning: physically massive)](http://www.elections.ca/pub_01.aspx?lang=e)
+          * [PDF data (13th through 34th General Elections, by specific request)](https://secure.elections.ca/FeedbackQuestion.aspx?lang=e) *[(Not yet complete)](https://github.com/bradbeattie/canadian-parliamentary-data/issues/14)*
+        * [Library of Parliament's History of Federal Ridings](https://lop.parl.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=G)
     """
     general_election = models.ForeignKey(GeneralElection, related_name="election_ridings", null=True)
     by_election = models.ForeignKey(ByElection, related_name="election_ridings", null=True)
@@ -113,7 +114,7 @@ class ElectionCandidate(models.Model):
     """
         ## Data sources
 
-        * The Library of Parliament lists election canadidates and in some cases detailed parliamentarian profiles: http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=C
+        * [Library of Parliament's Candidates](http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=C)
     """
     election_riding = models.ForeignKey(ElectionRiding, related_name="election_candidates")
     name = models.CharField(max_length=200, db_index=True)

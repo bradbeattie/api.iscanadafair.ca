@@ -8,9 +8,9 @@ class Party(NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
-        * Elections Canada lists registered parties and recently deregistered parties: http://www.elections.ca/content.aspx?dir=par&document=index&lang=e&section=pol
-        * The Library of Parliament lists registered and a selection of former parties: http://www.lop.parl.gc.ca/parlinfo/Lists/Party.aspx
-        * Wikipedia lists registered and historical parties: https://en.wikipedia.org/wiki/List_of_federal_political_parties_in_Canada
+        * [Elections Canada's Registered Political Parties and Parties Eligible for Registration](http://www.elections.ca/content.aspx?dir=par&document=index&lang=e&section=pol)
+        * [Library of Parliament's Party Profiles](http://www.lop.parl.gc.ca/parlinfo/Lists/Party.aspx)
+        * [Wikipedia's List of federal political parties in Canada](https://en.wikipedia.org/wiki/List_of_federal_political_parties_in_Canada)
     """
     color = models.CharField(max_length=20)
     related = models.ManyToManyField("self", blank=True)
@@ -29,7 +29,8 @@ class Parliament(LinksMixin, models.Model):
     """
         ## Data sources
 
-        * The Library of Parliament lists all parliaments along with detailed profiles: http://www.lop.parl.gc.ca/parlinfo/Compilations/ElectionsAndRidings/Elections.aspx?Menu=ElectionsRidings-Election
+        * [Library of Parliament's Parliament Profiles](http://www.lop.parl.gc.ca/parlinfo/Compilations/ElectionsAndRidings/Elections.aspx?Menu=ElectionsRidings-Election)
+        * [Wikipedia's List of Canadian federal parliaments](https://en.wikipedia.org/wiki/List_of_Canadian_federal_parliaments)
     """
     number = models.PositiveSmallIntegerField(primary_key=True)
     government_party = models.ForeignKey(Party, null=True, related_name="governed_parliaments")
@@ -46,7 +47,7 @@ class Session(LinksMixin, models.Model):
     """
         ## Data sources
 
-        * The Library of Parliament publishes profiles for each parliament, including details on each session: http://www.lop.parl.gc.ca/parlinfo/Lists/Parliament.aspx
+        * [Library of Parliament's Parliament Profiles](http://www.lop.parl.gc.ca/parlinfo/Lists/Parliament.aspx)
     """
     slug = models.SlugField(max_length=200, primary_key=True)
     parliament = models.ForeignKey(Parliament, related_name="sessions")
@@ -68,7 +69,7 @@ class Province(NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
-        * The Library of Parliament lists provinces and territories along with supplemental links: http://www.lop.parl.gc.ca/parlinfo/compilations/ProvinceTerritory.aspx?Menu=ProvinceTerritory
+        * [Library of Parliament's Provinces and Territories](http://www.lop.parl.gc.ca/parlinfo/compilations/ProvinceTerritory.aspx?Menu=ProvinceTerritory)
     """
 
     class Meta:
@@ -87,9 +88,9 @@ class Parliamentarian(NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
-        * OpenParliament.ca lists active and recent parliamentarians: https://openparliament.ca/politicians/
-        * Parliament lists active and rececent parliamentarians, along with extensive supplemental data: http://www.parl.gc.ca/Parliamentarians/en/members
-        * The Library of Parliament lists election canadidates and in some cases detailed parliamentarian profiles: http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=C
+        * [OpenParliament.ca (1994 onwards)](https://openparliament.ca/politicians/)
+        * [House of Commons' Members of Parliament](http://www.parl.gc.ca/Parliamentarians/en/members)
+        * [Library of Parliament's History of Federal Ridings](http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=C)
     """
     photo = models.ImageField(upload_to=get_photo_path)
     birthtext = models.CharField(max_length=10, db_index=True, help_text="Exact birth dates for parliamentarians in the 1800s sometimes omitted day or month")
@@ -104,9 +105,9 @@ class Riding(NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
-        * Elections Canada lists current federal electoral districts: http://www.elections.ca/Scripts/vis/SearchProvinces?L=e&PROV=CA&PROVID=99999&QID=-1&PAGEID=20
-        * The Library of Parliament lists ridings since confederation: http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=R
-        * Parliament lists current constituencies: http://www.parl.gc.ca/Parliamentarians/en/constituencies
+        * [Elections Canada's Electoral District Profiles (current ridings only)](http://www.elections.ca/Scripts/vis/SearchProvinces?L=e&PROV=CA&PROVID=99999&QID=-1&PAGEID=20)
+        * [House of Common's Current Constituencies (current ridings only)](http://www.parl.gc.ca/Parliamentarians/en/constituencies)
+        * [Library of Parliament's History of Federal Ridings](http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=R)
 
         ## Filtering examples
 

@@ -7,8 +7,9 @@ class Committee(NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
-        * Parliament publishes bills through LEGISinfo, including committee data: http://www.parl.gc.ca/LegisInfo/
-        * Parliament lists parsable data from the 36th parliament onwards: http://www.parl.gc.ca/Committees/en/List?parl=36&session=1
+        * [House of Commons' List of Committees (36th Parliament onwards)](http://www.ourcommons.ca/Committees/en/List)
+        * [Senate of Canada's List of Committees (35th Parliament onwards)](https://sencanada.ca/en/committees/)
+        * [LEGISinfo's Bills (37th Parliament onwards)](http://www.parl.gc.ca/LegisInfo/)
     """
     CHAMBER_HOC = 1
     CHAMBER_SEN = 2
@@ -28,7 +29,7 @@ class Bill(NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
-        * Parliament lists recent bills at LEGISinfo: http://www.parl.gc.ca/LegisInfo/
+        * [LEGISinfo (35th Parliament onwards)](http://www.parl.gc.ca/LegisInfo/)
 
         ## Filtering examples
 
