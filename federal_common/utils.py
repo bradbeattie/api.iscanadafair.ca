@@ -31,6 +31,7 @@ def one_or_none(l):
 class FetchSuppressed(Exception):
     pass
 
+
 class FetchFailure(Exception):
     pass
 
@@ -122,10 +123,12 @@ def get_cached_dict(qs):
                     cached[slugify(renamed)].add(obj)
     return cached
 
+
 def get_cached_obj(cached_dict, name):
     objset = cached_dict[name]
     assert len(objset) == 1, "Expected one entry named {}, got {}".format(name, objset)
     return next(iter(objset))
+
 
 def get_french_parl_url(root_url, soup):
     return urljoin(

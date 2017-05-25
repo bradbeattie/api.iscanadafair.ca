@@ -8,6 +8,11 @@ from rest_framework import serializers, viewsets
 from rest_framework.fields import JSONField as JSONSerializerField
 from rest_framework_nested import routers as nested_routers
 import django_filters
+import re
+
+
+COMPARISONS = set(["exact", "gt", "gte", "lt", "lte"])
+REL_MATCH = re.compile(r"[_-]rel[_-]\+")
 
 
 class ChoicesSerializerField(serializers.SerializerMethodField):
@@ -15,7 +20,12 @@ class ChoicesSerializerField(serializers.SerializerMethodField):
         return getattr(value, "get_{field_name}_display".format(field_name=self.field_name))()
 
 
-COMPARISONS = set(["exact", "gt", "gte", "lt", "lte"])
+def prep(*args):
+    return slugify("-".join(
+        REL_MATCH.sub("", str(arg))
+        for arg in args
+    ))
+
 
 def get_field_lookups(field):
     lookups = set(["exact"])
@@ -62,13 +72,15 @@ def generate_urls(*model_sets):
                                 self.fields[field.name] = ChoicesSerializerField()
                         for field in self.Meta.model._meta.get_fields():
                             if field not in self.Meta.model._meta.local_fields:
-                                self.fields[field.name] = serializers.HyperlinkedIdentityField(
-                                    view_name="{}-{}-list".format(
-                                        str(slugify(self.Meta.model._meta.verbose_name)),
-                                        str(slugify(field.related_model._meta.verbose_name_plural)),
+                                field_kwargs = {
+                                    "view_name": prep(
+                                        self.Meta.model._meta.verbose_name,
+                                        field.related_query_name().replace("_", "-") if field.related_query_name else field.related_model._meta.verbose_name_plural,
+                                        "list",
                                     ),
-                                    lookup_url_kwarg=field.remote_field.name.replace("_rel_+", "") + "_pk",  # TODO: This feels hacky. What's the proper approach?
-                                )
+                                    "lookup_url_kwarg": field.remote_field.name.replace("_rel_+", "") + "_pk",  # TODO: This feels hacky. What's the proper approach?
+                                }
+                                self.fields[field.name] = serializers.HyperlinkedIdentityField(**field_kwargs)
 
                     class Meta:
                         model = model_class
@@ -118,22 +130,19 @@ def generate_urls(*model_sets):
             if isinstance(model_class, ModelBase) and "Mixin" not in model_name:
                 for field in model_class._meta.get_fields():
                     if field not in model_class._meta.local_fields:
-                        nested_router = nested_routers.NestedSimpleRouter(
-                            router,
-                            str(slugify(model_class._meta.verbose_name_plural)),
-                            lookup=field.remote_field.name.replace("_rel_+", ""),  # TODO: This feels hacky. What's the proper approach?
-                        )
-        # TODO: Not sure this is handling party geographic and party historic relationships properly
-            #"related_historically": "http://localhost:8000/ridings/387/ridings/",
-            #"related_geographically": "http://localhost:8000/ridings/387/ridings/"
-                        nested_router.register(
-                            str(slugify(field.related_model._meta.verbose_name_plural)),
-                            model_viewsets[field.related_model._meta.object_name],
-                            base_name="-".join((
-                                str(slugify(model_class._meta.verbose_name)),
-                                str(slugify(field.related_model._meta.verbose_name_plural)),
-                            )),
-                        )
+                        nested_router_kwargs = {
+                            "parent_router": router,
+                            "parent_prefix": prep(model_class._meta.verbose_name_plural),
+                            "lookup": prep(field.remote_field.name),
+                        }
+                        prefix = prep(field.related_query_name() if field.related_query_name else field.related_model._meta.verbose_name_plural).replace("_", "-")
+                        register_kwargs = {
+                            "prefix": prefix,
+                            "viewset": model_viewsets[field.related_model._meta.object_name],
+                            "base_name": prep(model_class._meta.verbose_name, prefix),
+                        }
+                        nested_router = nested_routers.NestedSimpleRouter(**nested_router_kwargs)
+                        nested_router.register(**register_kwargs)
                         nested_router_instances.append(nested_router)
 
     return [
