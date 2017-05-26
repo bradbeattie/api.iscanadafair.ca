@@ -4,6 +4,7 @@ from django.db import transaction
 from federal_common.utils import fetch_url, url_tweak, dateparse
 from parliaments.models import Session
 from proceedings import models
+from tqdm import tqdm
 from urllib.parse import urljoin
 import concurrent.futures
 import logging
@@ -20,13 +21,15 @@ class Command(BaseCommand):
         if options["verbosity"] > 1:
             logger.setLevel(logging.DEBUG)
 
-        logger.info("Fetch hansard")
-
-        for session_link in BeautifulSoup(fetch_url(
-            "http://www.ourcommons.ca/documentviewer/en/house/latest-sitting",
-            allow_redirects=True,
-            use_cache=False,
-        ), "html.parser").select(".session-selector"):
+        for session_link in tqdm(
+            BeautifulSoup(fetch_url(
+                "http://www.ourcommons.ca/documentviewer/en/house/latest-sitting",
+                allow_redirects=True,
+                use_cache=False,
+            ), "html.parser").select(".session-selector"),
+            desc="Fetch Sittings, HoC",
+            unit="session",
+        ):
             session = Session.objects.get(
                 parliament__number=session_link.attrs["data-parliament"],
                 number=session_link.attrs["data-session"],
@@ -35,7 +38,6 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def parse_session(self, session):
-        logger.info("Fetching sittings for {}".format(session))
         session_url = url_tweak(
             "http://www.ourcommons.ca/DocumentViewer/en/SessionPublicationCalendarsWidget?organization=HOC&publicationTypeId=37",
             update={"parliament": session.parliament.number, "session": session.number},
@@ -62,6 +64,7 @@ class Command(BaseCommand):
 
     def parse_sitting_url(self, sitting_url, session):
         soup = BeautifulSoup(fetch_url(sitting_url), "html.parser")
+        #USE SOUP TO GET LINKS AND FRENCH LINKS
         sitting, created = models.Sitting.objects.get_or_create(
             session=session,
             number=SITTING.search(sitting_url).groups()[0].lower(),
