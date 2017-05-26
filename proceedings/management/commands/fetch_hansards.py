@@ -44,10 +44,14 @@ class Command(BaseCommand):
             )
 
     def parse_sitting_links(self, sitting_links):
-        for sitting_link in sitting_links:
-            soup = BeautifulSoup(fetch_url(
+        async def fetch_hansard(sitting_link):
+            soup = BeautifulSoup(await fetch_url(
                 urljoin(session_url, sitting_link.attrs["href"]),
                 use_cache=int(session_link.attrs["data-parliament"]) < 42,
             ), "html.parser")
             print(soup.select("#load-publication-selector")[0].text)
 
+        loop = asyncio.get_event_loop()
+        for sitting_link in sitting_links:
+            loop.run_until_complete(fetch_hansard(sitting_link))
+        loop.close()
