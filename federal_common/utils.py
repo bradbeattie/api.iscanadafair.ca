@@ -57,19 +57,19 @@ def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False):
         if mc.get(url_hash_cs):
             logger.warning("Fetch suppressed due to recent failure: {}".format(url))
             raise FetchSuppressed(url)
-        logger.info("Fetching {} (throttle {}s)".format(url, THROTTLE))
+        logger.info("Fetching {} (throttle {}s)".format(url, THROTTLE / 10))
         while True:
             try:
-                sleep(THROTTLE)
-                THROTTLE = math.pow(THROTTLE, 0.9)
+                sleep(THROTTLE / 4)
+                THROTTLE = max(0.1, math.pow(THROTTLE, 0.9))
                 response = requests.get(url, allow_redirects=allow_redirects, headers={
                     "From": settings.ADMINS[0][1],
                     "User-Agent": "https://github.com/bradbeattie/canadian-parlimentarty-data",
                 })
                 break
             except requests.exceptions.ConnectionError as e:
-                THROTTLE = max(1, THROTTLE) * 2
-                logger.warning(e, "(throttle {}s)".format(THROTTLE))
+                THROTTLE = (THROTTLE + 1) * 2
+                logger.warning(e, "(throttle {}s)".format(THROTTLE / 10))
         if response.status_code != 200:
             mc.set(url_hash_cs, True, 86400 * 3)
             raise FetchFailure(url, response.status_code, response.content)
