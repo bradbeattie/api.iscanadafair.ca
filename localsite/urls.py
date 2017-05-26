@@ -37,9 +37,9 @@ def get_view_description(cls, html=False):
 
 
 urlpatterns = generate_urls(
-    proceedings.models,
-    elections.models,
     parliaments.models,
+    elections.models,
+    proceedings.models,
 )
 
 

@@ -1,18 +1,17 @@
-from bs4 import BeautifulSoup, Tag
-from datetime import datetime
-from django.conf import settings
+from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Q
-from elections import models
-from federal_common.utils import fetch_url, url_tweak
+from federal_common.utils import fetch_url, url_tweak, dateparse
+from parliaments.models import Session
+from proceedings import models
 from urllib.parse import urljoin
-from urllib.parse import urlparse, parse_qs
-import asyncio
+import concurrent.futures
 import logging
+import re
 
 
 logger = logging.getLogger(__name__)
+SITTING = re.compile(r"/sitting-([0-9]+[abc]?)/", re.I)
 
 
 class Command(BaseCommand):
@@ -27,31 +26,44 @@ class Command(BaseCommand):
             "http://www.ourcommons.ca/documentviewer/en/house/latest-sitting",
             allow_redirects=True,
             use_cache=False,
-        ), "html.parser").select(".session-selector-session a"):
-            session_url = url_tweak(
-                "http://www.ourcommons.ca/DocumentViewer/en/SessionPublicationCalendarsWidget?organization=HOC&publicationTypeId=191",
-                update={
-                    "parliament": session_link.attrs["data-parliament"],
-                    "session": session_link.attrs["data-session"],
-                },
+        ), "html.parser").select(".session-selector"):
+            session = Session.objects.get(
+                parliament__number=session_link.attrs["data-parliament"],
+                number=session_link.attrs["data-session"],
             )
-            sittings_links = (
-                urljoin(session_url, sitting_link.attrs["href"])
-                for sitting_link in BeautifulSoup(fetch_url(
-                    session_url,
-                    use_cache=int(session_link.attrs["data-parliament"]) < 42,
-                ), "html.parser").select("td a")
-            )
+            self.parse_session(session)
 
-    def parse_sitting_links(self, sitting_links):
-        async def fetch_hansard(sitting_link):
-            soup = BeautifulSoup(await fetch_url(
-                urljoin(session_url, sitting_link.attrs["href"]),
-                use_cache=int(session_link.attrs["data-parliament"]) < 42,
-            ), "html.parser")
-            print(soup.select("#load-publication-selector")[0].text)
+    @transaction.atomic
+    def parse_session(self, session):
+        logger.info("Fetching sittings for {}".format(session))
+        session_url = url_tweak(
+            "http://www.ourcommons.ca/DocumentViewer/en/SessionPublicationCalendarsWidget?organization=HOC&publicationTypeId=37",
+            update={"parliament": session.parliament.number, "session": session.number},
+        )
+        sitting_urls = (
+            urljoin(session_url, sitting_link.attrs["href"])
+            for sitting_link in BeautifulSoup(fetch_url(
+                session_url,
+                use_cache=session.parliament.number < 42,
+            ), "html.parser").select("td a")
+        )
 
-        loop = asyncio.get_event_loop()
-        for sitting_link in sitting_links:
-            loop.run_until_complete(fetch_hansard(sitting_link))
-        loop.close()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=25) as executor:
+            future_to_url = {
+                executor.submit(self.parse_sitting_url, sitting_url, session): sitting_url
+                for sitting_url in sitting_urls
+            }
+            for future in concurrent.futures.as_completed(future_to_url):
+                url = future_to_url[future]
+                try:
+                    future.result()
+                except Exception as exc:
+                    print('%r generated an exception: %s' % (url, exc))
+
+    def parse_sitting_url(self, sitting_url, session):
+        soup = BeautifulSoup(fetch_url(sitting_url), "html.parser")
+        sitting, created = models.Sitting.objects.get_or_create(
+            session=session,
+            number=SITTING.search(sitting_url).groups()[0].lower(),
+            date=dateparse(soup.select("#load-publication-selector")[0].text),
+        )

@@ -3,6 +3,24 @@ from federal_common.models import NamesMixin, LinksMixin
 from parliaments import models as parliament_models
 
 
+class Sitting(LinksMixin, models.Model):
+    """
+        ## Data sources
+
+        * [House of Commons' House Publications (35th Parliament onwards)](http://www.ourcommons.ca/documentviewer/en/house/latest-sitting)
+    """
+    session = models.ForeignKey(parliament_models.Session, related_name="sittings")
+    number = models.CharField(max_length=5, db_index=True)
+    date = models.DateField(unique=True)
+
+    class Meta:
+        unique_together = ("session", "number")
+        ordering = ("date", )
+
+    def __str__(self):
+        return "Sitting {}".format(self.date)
+
+
 class Committee(NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources

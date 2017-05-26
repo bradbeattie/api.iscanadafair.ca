@@ -3,6 +3,11 @@ from django.contrib import admin
 from proceedings import models
 
 
+class SittingAdmin(HasLinks, CommonAdmin):
+    list_display = ("date", "session", "show_links")
+    list_filter = ("session__parliament", )
+
+
 class CommitteeAdmin(HasNames, HasLinks, CommonAdmin):
     list_display = ("slug", "show_names", "chamber", "show_links")
     list_filter = ("chamber", "session__parliament")
@@ -30,5 +35,6 @@ class BillAdmin(HasNames, HasLinks, CommonAdmin):
 
 admin.site.register(models.Bill, BillAdmin)
 admin.site.register(models.Committee, CommitteeAdmin)
+admin.site.register(models.Sitting, SittingAdmin)
 # admin.site.register(models.Vote, VoteAdmin)
 # admin.site.register(models.VoteParticipant, VoteParticipantAdmin)
