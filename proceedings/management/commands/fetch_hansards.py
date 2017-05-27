@@ -1,7 +1,9 @@
 from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from federal_common.utils import fetch_url, url_tweak, dateparse
+from federal_common import sources
+from federal_common.sources import EN, FR
+from federal_common.utils import fetch_url, url_tweak, dateparse, one_or_none, get_french_parl_url
 from parliaments.models import Session
 from proceedings import models
 from tqdm import tqdm
@@ -12,7 +14,7 @@ import re
 
 
 logger = logging.getLogger(__name__)
-SITTING = re.compile(r"/sitting-([0-9]+[abc]?)/", re.I)
+SITTING = re.compile(r"/sitting-([0-9]+[a-z]?)/", re.I)
 
 
 class Command(BaseCommand):
@@ -57,16 +59,22 @@ class Command(BaseCommand):
             }
             for future in concurrent.futures.as_completed(future_to_url):
                 url = future_to_url[future]
-                try:
-                    future.result()
-                except Exception as exc:
-                    print('%r generated an exception: %s' % (url, exc))
+                future.result()
 
     def parse_sitting_url(self, sitting_url, session):
         soup = BeautifulSoup(fetch_url(sitting_url), "html.parser")
-        #USE SOUP TO GET LINKS AND FRENCH LINKS
         sitting, created = models.Sitting.objects.get_or_create(
             session=session,
             number=SITTING.search(sitting_url).groups()[0].lower(),
             date=dateparse(soup.select("#load-publication-selector")[0].text),
         )
+        for lang in (EN, FR):
+            for tab in soup.select(".publication-tabs > li"):
+                if "disabled" not in tab["class"]:
+                    sitting.links[lang][", ".join((sources.NAME_HOC[lang], tab.a.text))] = urljoin(
+                        sitting_url,
+                        tab.a.attrs.get("href", sitting_url)
+                    )
+            if lang == EN:
+                soup = BeautifulSoup(fetch_url(get_french_parl_url(sitting_url, soup)), "html.parser")
+        sitting.save()
