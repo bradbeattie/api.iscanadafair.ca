@@ -115,6 +115,10 @@ class ElectionCandidate(models.Model):
         ## Data sources
 
         * [Library of Parliament's Candidates](http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=C)
+
+        ## Notes
+
+        * A candidate might run in one election as John Doe, but in the next as Jonny Doe. More frustrating still, a John Doe may run in one election, and a different John Doe in the next election in the same riding. [The Library of Parliament's History of Federal Ridings (HFER)](https://lop.parl.ca/About/Parliament/FederalRidingsHistory/HFER.asp) doesn't uniquely identify candidates and the research involved in doing so is well beyond the scope of this project. As such, only candidates that win are linked with their [parliamentarian](/parliamentarians/) object as per the available data. This means that looking at a parliamentarian, one can't get the list of failed candidacies as I don't have a solid enough source for that. Omitting spotty data seems a safer bet than including it.
     """
     election_riding = models.ForeignKey(ElectionRiding, related_name="election_candidates")
     name = models.CharField(max_length=200, db_index=True)
