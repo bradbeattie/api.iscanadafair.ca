@@ -4,8 +4,9 @@ from proceedings import models
 
 
 class SittingAdmin(HasLinks, CommonAdmin):
-    list_display = ("date", "session", "show_links")
+    list_display = ("slug", "date", "session", "show_links")
     list_filter = ("session__parliament", )
+    search_fields = ("slug", )
 
 
 class CommitteeAdmin(HasNames, HasLinks, CommonAdmin):

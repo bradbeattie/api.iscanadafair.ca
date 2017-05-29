@@ -1,6 +1,61 @@
 from django.db import models
+from django_extensions.db.fields import json
 from federal_common.models import NamesMixin, LinksMixin
 from parliaments import models as parliament_models
+
+
+class Recording(NamesMixin, LinksMixin, models.Model):
+    """
+        ## Data sources
+
+        * [ParlVU (39th Parliament onwards)](http://parlvu.parl.gc.ca/)
+
+        ## Notes
+
+        * OurCommons and ParlVU don't always agree. I've identified the following inconsistencies and contacted infonet@parl.gc.ca. I'm currently waiting on a response.
+          * ParlVU speaks of [HoC Sitting No. 130 (2014-10-22)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20141022/-1/13793), but OurCommons thinks no session exists on this date and [#130 is on 2014-10-23](http://www.ourcommons.ca/DocumentViewer/en/41-2/house/sitting-130/order-notice).
+          * ParlVU speaks of [HoC Sitting No. A-35 (2013-12-11)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20131211/-1/13665), but OurCommons thinks no session exists on this date and #35A doesn't exist.
+          * ParlVU speaks of [HoC Sitting No. B-35 (2013-12-12)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20131212/-1/13666), but OurCommons thinks [#34A is on 2013-12-12](http://www.ourcommons.ca/DocumentViewer/en/41-2/house/sitting-34A/journals) and #35B doesn't exist.
+          * ParlVU speaks of [HoC Sitting No. C-35 (2013-12-13)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20131213/-1/13667), but OurCommons thinks no session exists on this date and #35C doesn't exist.
+          * ParlVU speaks of [HoC Sitting No. A-50 (2010-05-27)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20100527/-1/18261), but OurCommons thinks [#50 is on 2010-05-27](http://www.ourcommons.ca/DocumentViewer/en/40-3/house/sitting-50/order-notice) and #50A doesn't exist.
+          * ParlVU speaks of [HoC Sitting No. A-98 (2008-05-26)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20080526/-1/24242), but OurCommons thinks [#98 is on 2008-05-26](http://www.ourcommons.ca/DocumentViewer/en/39-2/house/sitting-98/order-notice) and #98A doesn't exist.
+          * ParlVU speaks of [HoC Sitting No. 118 (2008-09-15)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20080915/-1/24258), but OurCommons thinks no session exists on this date and #118 doesn't exist.
+          * ParlVU speaks of [HoC Sitting No. 119 (2008-09-16)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20080916/-1/24259), but OurCommons thinks no session exists on this date and #119 doesn't exist.
+          * ParlVU speaks of [HoC Sitting No. 120 (2008-09-17)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20080917/-1/24260), but OurCommons thinks no session exists on this date and #120 doesn't exist.
+          * ParlVU speaks of [HoC Sitting No. A-13 (2008-12-04)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20081204/-1/18081), but OurCommons thinks [#13 is on 2008-12-04](http://www.ourcommons.ca/DocumentViewer/en/40-1/house/sitting-13/order-notice) and #13A doesn't exist.
+          * ParlVU speaks of [HoC Sitting No. 15 (2008-12-08)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20081208/-1/18079), but OurCommons thinks no session exists on this date and [#15 is on 2009-02-13](http://www.ourcommons.ca/DocumentViewer/en/40-2/house/sitting-15/order-notice).
+          * ParlVU speaks of [HoC Sitting No. A-36 (2007-12-12)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20071212/-1/24179), but OurCommons thinks [#36 is on 2007-12-12](http://www.ourcommons.ca/DocumentViewer/en/39-2/house/sitting-36/order-notice) and #36A doesn't exist.
+          * ParlVU speaks of [HoC Sitting No. 888 (2006-09-22)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20060922/-1/24055), but OurCommons thinks [#51 is on 2006-09-22](http://www.ourcommons.ca/DocumentViewer/en/39-1/house/sitting-51/order-notice) and #888 doesn't exist.
+    """
+    CATEGORY_AUDIO_ONLY = 1
+    CATEGORY_TELEVISED = 2
+    CATEGORY_IN_CAMERA = 2
+    CATEGORY_NO_BROADCAST = 3
+    CATEGORY_TRAVEL = 4
+    STATUS_ADJOURNED = 1
+    STATUS_CANCELLED = 2
+    STATUS_NOT_STARTED = 3
+
+    scheduled_start = models.DateTimeField()
+    scheduled_end = models.DateTimeField()
+    actual_start = models.DateTimeField(null=True)
+    actual_end = models.DateTimeField(null=True)
+    location = json.JSONField()
+    category = models.PositiveSmallIntegerField(choices=(
+        (CATEGORY_AUDIO_ONLY, "Audio only"),
+        (CATEGORY_TELEVISED, "Televised"),
+        (CATEGORY_IN_CAMERA, "In Camera"),
+        (CATEGORY_NO_BROADCAST, "No Broadcast"),
+        (CATEGORY_TRAVEL, "Travel"),
+    ))
+    status = models.PositiveSmallIntegerField(choices=(
+        (STATUS_ADJOURNED, "Adjourned"),
+        (STATUS_CANCELLED, "Cancelled"),
+        (STATUS_NOT_STARTED, "Not Started"),
+    ))
+
+    class Meta:
+        ordering = ("slug", )
 
 
 class Sitting(LinksMixin, models.Model):
@@ -9,9 +64,11 @@ class Sitting(LinksMixin, models.Model):
 
         * [House of Commons' House Publications (35th Parliament onwards)](http://www.ourcommons.ca/documentviewer/en/house/latest-sitting)
     """
-    session = models.ForeignKey(parliament_models.Session, related_name="sittings")
+    slug = models.SlugField(max_length=200, primary_key=True)
     number = models.CharField(max_length=5, db_index=True)
+    session = models.ForeignKey(parliament_models.Session, related_name="sittings")
     date = models.DateField(unique=True)
+    recording = models.ForeignKey(Recording, null=True, blank=True)
 
     class Meta:
         unique_together = ("session", "number")
@@ -61,43 +118,6 @@ class Bill(NamesMixin, LinksMixin, models.Model):
 
     class Meta:
         ordering = ("slug", )
-
-
-# class Recording(NamesMixin, LinksMixin, models.Model):
-#     """
-#         ## Data sources
-#
-#         * http://parlvu.parl.gc.ca/
-#     """
-#     CATEGORY_AUDIO_ONLY = 1
-#     CATEGORY_TELEVISED = 2
-#     CATEGORY_IN_CAMERA = 2
-#     CATEGORY_NO_BROADCAST = 3
-#     CATEGORY_TRAVEL = 4
-#     STATUS_ADJOURNED = 1
-#     STATUS_CANCELLED = 2
-#     STATUS_NOT_STARTED = 3
-#
-#     scheduled_start = models.DateTimeField()
-#     scheduled_end = models.DateTimeField()
-#     actual_start = models.DateTimeField(null=True)
-#     actual_end = models.DateTimeField(null=True)
-#     location = models.CharField(max_length=200)
-#     category = models.PositiveSmallIntegerField(choices=(
-#         (CATEGORY_AUDIO_ONLY, "Audio only"),
-#         (CATEGORY_TELEVISED, "Televised"),
-#         (CATEGORY_IN_CAMERA, "In Camera"),
-#         (CATEGORY_NO_BROADCAST, "No Broadcast"),
-#         (CATEGORY_TRAVEL, "Travel"),
-#     ))
-#     status = models.PositiveSmallIntegerField(choices=(
-#         (STATUS_ADJOURNED, "Adjourned"),
-#         (STATUS_CANCELLED, "Cancelled"),
-#         (STATUS_NOT_STARTED, "Not Started"),
-#     ))
-#
-#     class Meta:
-#         ordering = ("slug", )
 
 
 # class CommitteeMeeting(models.Model):

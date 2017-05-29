@@ -11,4 +11,4 @@ rm -rf elections/migrations && \
 ./manage.py makemigrations elections && \
 ./manage.py migrate && \
 echo "from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'admin@example.com', 'pass')" | python manage.py shell &&
-mysqldump parliamentary_data > wiped.sql
+mysqldump parliamentary_data > after-step-0.sql

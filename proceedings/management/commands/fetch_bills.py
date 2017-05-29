@@ -66,8 +66,8 @@ class Command(BaseCommand):
                     },
                 )
                 bill.names[lang][sources.NAME_LEGISINFO_NUMBER[lang]] = bill_number
-                bill.names[lang][sources.NAME_LEGISINFO_TITLE[lang]] = bill_soup.select("billtitle > title[language={}]".format(sources.LANG_LEGISINFOL_XML[lang]))[0].text
-                title_short = bill_soup.select("shorttitle > title[language={}]".format(sources.LANG_LEGISINFOL_XML[lang]))[0].text
+                bill.names[lang][sources.NAME_LEGISINFO_TITLE[lang]] = bill_soup.select("billtitle > title[language={}]".format(sources.LANG_LEGISINFO_XML[lang]))[0].text
+                title_short = bill_soup.select("shorttitle > title[language={}]".format(sources.LANG_LEGISINFO_XML[lang]))[0].text
                 if title_short:
                     bill.names[lang][sources.NAME_LEGISINFO_TITLE_SHORT[lang]] = title_short
             bill.save()

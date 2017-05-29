@@ -36,7 +36,7 @@ class FetchFailure(Exception):
     pass
 
 
-def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False):
+def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False, discard_content=False):
     global THROTTLE
     url_hash_cs = hashlib.sha512(url.encode()).hexdigest()
     url_hash_ci = hashlib.sha512(url.lower().encode()).hexdigest()
@@ -80,7 +80,7 @@ def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False):
             except UnicodeDecodeError:
                 f.write(content.decode("latin1"))
     else:
-        content = open(filename).read()
+        content = None if discard_content else open(filename).read()
         if settings.DEBUG:
             os.utime(filename)
     return content
@@ -102,6 +102,10 @@ def url_tweak(url, remove=None, update=None):
         query.pop(k, None)
     parsed["query"] = urlencode(sorted(query.items()), doseq=True)
     return urlunparse(ParseResult(**parsed))
+
+
+def datetimeparse(s):
+    return dateutil_parse(s)
 
 
 def dateparse(s):
