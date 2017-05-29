@@ -109,6 +109,10 @@ class Riding(NamesMixin, LinksMixin, models.Model):
         * [House of Common's Current Constituencies (current ridings only)](http://www.parl.gc.ca/Parliamentarians/en/constituencies)
         * [Library of Parliament's History of Federal Ridings](http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=R)
 
+        ## Notes
+
+        * Some riding profile pages, from which we obtain historically related ridings, don't load properly (e.g. [Western Arctic](http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Include=Y&Language=F&Search=Det&rid=808). I've contacted info@parl.gc.ca regarding these issues.
+
         ## Filtering examples
 
         * [Ridings in British Columbia](?slug__startswith=british-columbia-)

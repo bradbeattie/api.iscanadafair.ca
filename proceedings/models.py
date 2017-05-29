@@ -63,6 +63,10 @@ class Sitting(LinksMixin, models.Model):
         ## Data sources
 
         * [House of Commons' House Publications (35th Parliament onwards)](http://www.ourcommons.ca/documentviewer/en/house/latest-sitting)
+
+        ## Notes
+
+        * Some House Publication pages don't load properly (e.g. [Parliament 38, Session 1, Sitting 124A](http://www.ourcommons.ca/DocumentViewer/en/38-1/house/sitting-124A/journals)). I've contacted infonet@parl.gc.ca with these issues.
     """
     slug = models.SlugField(max_length=200, primary_key=True)
     number = models.CharField(max_length=5, db_index=True)
