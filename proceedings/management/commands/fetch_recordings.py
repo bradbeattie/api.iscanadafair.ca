@@ -2,11 +2,13 @@ from datetime import date, timedelta
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models import Q
 from django.utils.text import slugify
 from django.utils.timezone import make_aware
 from federal_common import sources
 from federal_common.sources import EN, FR
 from federal_common.utils import fetch_url, dateparse, datetimeparse
+from parliaments.models import Session
 from proceedings import models
 from tqdm import tqdm
 from unidecode import unidecode
@@ -24,6 +26,7 @@ SUFFIX = re.compile(r"[ -]+$")
 TZ = pytz.timezone("America/Toronto")
 HOUSE_PUBLICATIONS = "http://www.ourcommons.ca/documentviewer/en/house/latest-sitting"
 HOC_SITTING_NO = re.compile("^HoC Sitting No. (.*)$")
+COMMITTEE_CODE = re.compile("^([A-Z][A-Z0-9]+) Meeting")
 WHITESPACE = re.compile(r"\s+")
 REPLACEMENTS = {
     EN: (
@@ -134,9 +137,17 @@ class Command(BaseCommand):
                 )
             locations.setdefault(recording.location[EN], recording.location[FR])
             assert locations[recording.location[EN]] == recording.location[FR]
-            recording.save()
 
             title = recording.names[EN][sources.NAME_PARLVU_TITLE[EN]]
+            match = COMMITTEE_CODE.search(title)
+            if match:
+                code = match.groups()[0]
+                session = Session.objects.filter(date_start__lte=day).filter(Q(date_end__gte=day) | Q(date_end__isnull=True)).get()
+                prefix = slug__startswith="-".join((code.lower(), session.slug, ""))
+                recording.committee = models.Committee.objects.get(Q(slug__startswith=prefix) | Q(slug__startswith=prefix.replace("aano-", "inan-").replace("saan-", "sina-")))
+
+            recording.save()
+
             match = HOC_SITTING_NO.search(title)
             if match:
                 number = "".join(reversed(match.groups()[0].split("-"))).lstrip("0")

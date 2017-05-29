@@ -21,6 +21,12 @@ class BillAdmin(HasNames, HasLinks, CommonAdmin):
     search_fields = ("slug", )
 
 
+class RecordingAdmin(HasNames, HasLinks, CommonAdmin):
+    list_display = ("slug", "show_names")
+    list_filter = ("category", "status")
+    search_fields = ("slug", )
+
+
 # class VoteAdmin(HasLinks, CommonAdmin):
 #     list_display = ("number", "bill", "show_links")
 #     raw_id_fields = ("bill", )
@@ -37,5 +43,6 @@ class BillAdmin(HasNames, HasLinks, CommonAdmin):
 admin.site.register(models.Bill, BillAdmin)
 admin.site.register(models.Committee, CommitteeAdmin)
 admin.site.register(models.Sitting, SittingAdmin)
+admin.site.register(models.Recording, RecordingAdmin)
 # admin.site.register(models.Vote, VoteAdmin)
 # admin.site.register(models.VoteParticipant, VoteParticipantAdmin)
