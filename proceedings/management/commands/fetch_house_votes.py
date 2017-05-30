@@ -33,6 +33,7 @@ PARTY_MAPPING = {
     "Liberal": "lib",
     "NDP": "ndp",
     "Green Party": "gp",
+    "Forces et Démocratie": "sd",
 }
 RECORDED_VOTE_MAPPING = {
     (False, False, True): models.HouseVoteParticipant.VOTE_PAIRED,
