@@ -143,13 +143,13 @@ class Command(BaseCommand):
             if match:
                 code = match.groups()[0]
                 session = Session.objects.filter(date_start__lte=day).filter(Q(date_end__gte=day) | Q(date_end__isnull=True)).get()
-                prefix = slug__startswith="-".join((code.lower(), session.slug, ""))
+                prefix = "-".join((code.lower(), session.slug, ""))
                 recording.committee = models.Committee.objects.get(Q(slug__startswith=prefix) | Q(slug__startswith=prefix.replace("aano-", "inan-").replace("saan-", "sina-")))
 
             recording.save()
 
             match = HOC_SITTING_NO.search(title)
-            if match:
+            if match and recording.status != models.Recording.STATUS_CANCELLED:
                 number = "".join(reversed(match.groups()[0].split("-"))).lstrip("0")
                 sitting_number = models.Sitting.objects.filter(date__gt=day - timedelta(days=120), date__lt=day + timedelta(days=120), number=number).first()
                 sitting_day = models.Sitting.objects.filter(date=day).first()

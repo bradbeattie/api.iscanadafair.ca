@@ -35,19 +35,12 @@ class Recording(NamesMixin, LinksMixin, models.Model):
         ## Notes
 
         * OurCommons and ParlVU don't always agree. I've identified the following inconsistencies and contacted infonet@parl.gc.ca. I'm currently waiting on a response.
-          * ParlVU speaks of [HoC Sitting No. 130 (2014-10-22)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20141022/-1/13793), but OurCommons thinks no session exists on this date and [#130 is on 2014-10-23](http://www.ourcommons.ca/DocumentViewer/en/41-2/house/sitting-130/order-notice).
-          * ParlVU speaks of [HoC Sitting No. A-35 (2013-12-11)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20131211/-1/13665), but OurCommons thinks no session exists on this date and #35A doesn't exist.
-          * ParlVU speaks of [HoC Sitting No. B-35 (2013-12-12)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20131212/-1/13666), but OurCommons thinks [#34A is on 2013-12-12](http://www.ourcommons.ca/DocumentViewer/en/41-2/house/sitting-34A/journals) and #35B doesn't exist.
-          * ParlVU speaks of [HoC Sitting No. C-35 (2013-12-13)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20131213/-1/13667), but OurCommons thinks no session exists on this date and #35C doesn't exist.
-          * ParlVU speaks of [HoC Sitting No. A-50 (2010-05-27)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20100527/-1/18261), but OurCommons thinks [#50 is on 2010-05-27](http://www.ourcommons.ca/DocumentViewer/en/40-3/house/sitting-50/order-notice) and #50A doesn't exist.
-          * ParlVU speaks of [HoC Sitting No. A-98 (2008-05-26)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20080526/-1/24242), but OurCommons thinks [#98 is on 2008-05-26](http://www.ourcommons.ca/DocumentViewer/en/39-2/house/sitting-98/order-notice) and #98A doesn't exist.
-          * ParlVU speaks of [HoC Sitting No. 118 (2008-09-15)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20080915/-1/24258), but OurCommons thinks no session exists on this date and #118 doesn't exist.
-          * ParlVU speaks of [HoC Sitting No. 119 (2008-09-16)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20080916/-1/24259), but OurCommons thinks no session exists on this date and #119 doesn't exist.
-          * ParlVU speaks of [HoC Sitting No. 120 (2008-09-17)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20080917/-1/24260), but OurCommons thinks no session exists on this date and #120 doesn't exist.
-          * ParlVU speaks of [HoC Sitting No. A-13 (2008-12-04)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20081204/-1/18081), but OurCommons thinks [#13 is on 2008-12-04](http://www.ourcommons.ca/DocumentViewer/en/40-1/house/sitting-13/order-notice) and #13A doesn't exist.
-          * ParlVU speaks of [HoC Sitting No. 15 (2008-12-08)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20081208/-1/18079), but OurCommons thinks no session exists on this date and [#15 is on 2009-02-13](http://www.ourcommons.ca/DocumentViewer/en/40-2/house/sitting-15/order-notice).
-          * ParlVU speaks of [HoC Sitting No. A-36 (2007-12-12)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20071212/-1/24179), but OurCommons thinks [#36 is on 2007-12-12](http://www.ourcommons.ca/DocumentViewer/en/39-2/house/sitting-36/order-notice) and #36A doesn't exist.
-          * ParlVU speaks of [HoC Sitting No. 888 (2006-09-22)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20060922/-1/24055), but OurCommons thinks [#51 is on 2006-09-22](http://www.ourcommons.ca/DocumentViewer/en/39-1/house/sitting-51/order-notice) and #888 doesn't exist.
+          * (Legitimate discrepency) ParlVU speaks of [HoC Sitting No. 76 (2016-06-17)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20160617/-1/25343), but OurCommons thinks [#75 is on 2016-06-17](http://www.ourcommons.ca/DocumentViewer/en/42-1/house/sitting-75/order-notice) and [#76 is on 2016-09-19](http://www.ourcommons.ca/DocumentViewer/en/42-1/house/sitting-76/order-notice).
+          * (Split event) ParlVU speaks of [HoC Sitting No. A-50 (2010-05-27)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20100527/-1/18261), but OurCommons thinks [#50 is on 2010-05-27](http://www.ourcommons.ca/DocumentViewer/en/40-3/house/sitting-50/order-notice) and #50A doesn't exist.
+          * (Split event) ParlVU speaks of [HoC Sitting No. A-98 (2008-05-26)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20080526/-1/24242), but OurCommons thinks [#98 is on 2008-05-26](http://www.ourcommons.ca/DocumentViewer/en/39-2/house/sitting-98/order-notice) and #98A doesn't exist.
+          * (Split event) ParlVU speaks of [HoC Sitting No. A-13 (2008-12-04)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20081204/-1/18081), but OurCommons thinks [#13 is on 2008-12-04](http://www.ourcommons.ca/DocumentViewer/en/40-1/house/sitting-13/order-notice) and #13A doesn't exist.
+          * (Split event) ParlVU speaks of [HoC Sitting No. A-36 (2007-12-12)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20071212/-1/24179), but OurCommons thinks [#36 is on 2007-12-12](http://www.ourcommons.ca/DocumentViewer/en/39-2/house/sitting-36/order-notice) and #36A doesn't exist.
+          * (Special sitting with no publications) ParlVU speaks of [HoC Sitting No. 888 (2006-09-22)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20060922/-1/24055), but OurCommons thinks [#51 is on 2006-09-22](http://www.ourcommons.ca/DocumentViewer/en/39-1/house/sitting-51/order-notice) and #888 doesn't exist.
     """
     CATEGORY_AUDIO_ONLY = 1
     CATEGORY_TELEVISED = 2
@@ -78,7 +71,7 @@ class Recording(NamesMixin, LinksMixin, models.Model):
     committee = models.ForeignKey(Committee, null=True, blank=True, related_name="recordings")
 
     class Meta:
-        ordering = ("slug", )
+        ordering = ("scheduled_start", "slug")
 
 
 class Sitting(LinksMixin, models.Model):
@@ -125,58 +118,61 @@ class Bill(NamesMixin, LinksMixin, models.Model):
         ordering = ("slug", )
 
 
-# class CommitteeMeeting(models.Model):
-#     """
-#         ## Data sources
-#
-#         * http://www.parl.gc.ca/Committees/en/FilteredMeetings?meetingDate=2017-05-03
-#     """
-#     pass
+class HouseVote(LinksMixin, models.Model):
+    """
+        ## Data sources
+
+        * [House of Commons' Votes (38th Parliament onwards)](http://www.ourcommons.ca/parliamentarians/en/votes)
+    """
+    RESULT_NEGATIVED = 1
+    RESULT_AGREED_TO = 2
+    RESULT_TIE = 3
+
+    slug = models.SlugField(max_length=200, primary_key=True)
+    sitting = models.ForeignKey(Sitting, related_name="house_votes")
+    number = models.PositiveSmallIntegerField(db_index=True)
+    bill = models.ForeignKey(Bill, blank=True, null=True, related_name="house_votes")
+    context = json.JSONField()
+    result = models.PositiveSmallIntegerField(choices=(
+        (RESULT_NEGATIVED, "Negatived"),
+        (RESULT_AGREED_TO, "Agreed To"),
+        (RESULT_TIE, "Tie"),
+    ))
+
+    class Meta:
+        ordering = ("sitting__date", "slug")
+
+    def __str__(self):
+        return "{}, House Vote {}".format(self.sitting, self.number)
 
 
-# class Vote(models.Model):
-#     """
-#         ## Data sources
-#
-#         * Parliament publishes votes since the 38th parliament: http://www.parl.gc.ca/housechamberbusiness/ChamberVoteList.aspx
-#     """
-#     session = models.ForeignKey(parliament_models.Session, related_name="votes")
-#     number = models.PositiveSmallIntegerField(db_index=True)
-#     bill = models.ForeignKey(Bill, blank=True, null=True, related_name="votes")
-#     context = json.JSONField()
-#     links = json.JSONField()
-#
-#     class Meta:
-#         unique_together = ("session", "number")
-#
-#     def __str__(self):
-#         return "{}, Vote {}".format(self.sitting, self.number)
-#
-#
-# class VoteParticipant(models.Model):
-#     """
-#         ## Data sources
-#
-#         * Parliament publishes votes and vote details since the 38th parliament: http://www.parl.gc.ca/housechamberbusiness/ChamberVoteList.aspx
-#           * Additionally, votes come with party affilliation which is useful in tracking party affiliation when MPs switch between elections.
-#     """
-#     VOTE_NAY = 1
-#     VOTE_YEA = 2
-#     VOTE_PAIRED = 3
-#     VOTE_ABSTAINED = 4
-#
-#     vote = models.ForeignKey(Vote, related_name="vote_participants")
-#     parliamentarian = models.ForeignKey(parliament_models.Parliamentarian, related_name="vote_participants")
-#     party = models.ForeignKey(parliament_models.Party, related_name="vote_participants", null=True)
-#     recorded_vote = models.PositiveSmallIntegerField(choices=(
-#         (VOTE_NAY, "Nay"),
-#         (VOTE_YEA, "Yea"),
-#         (VOTE_PAIRED, "Paired"),
-#         (VOTE_ABSTAINED, "Abstained"),
-#     ))
-#
-#     class Meta:
-#         unique_together = ("vote", "parliamentarian")
-#
-#     def __str__(self):
-#         return "{}, {}, {}".format(self.sitting_vote, self.parliamentarian, self.get_recorded_vote_display())
+class HouseVoteParticipant(models.Model):
+    """
+        ## Data sources
+
+        * [House of Commons' Votes (38th Parliament onwards)](http://www.ourcommons.ca/parliamentarians/en/votes)
+
+        ## Notes
+
+        * The records provide MP party affiliation outside of elections, which can be used to track party affiliation changes between elections.
+    """
+    VOTE_NAY = 1
+    VOTE_YEA = 2
+    VOTE_PAIRED = 3
+    VOTE_ABSTAINED = 4
+
+    house_vote = models.ForeignKey(HouseVote, related_name="house_vote_participants")
+    parliamentarian = models.ForeignKey(parliament_models.Parliamentarian, related_name="house_vote_participants")
+    party = models.ForeignKey(parliament_models.Party, related_name="house_vote_participants", null=True)
+    recorded_vote = models.PositiveSmallIntegerField(choices=(
+        (VOTE_NAY, "Nay"),
+        (VOTE_YEA, "Yea"),
+        (VOTE_PAIRED, "Paired"),
+        (VOTE_ABSTAINED, "Abstained"),
+    ))
+
+    class Meta:
+        unique_together = ("house_vote", "parliamentarian")
+
+    def __str__(self):
+        return "{}, {}, {}".format(self.house_vote, self.get_recorded_vote_display())

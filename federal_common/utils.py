@@ -6,6 +6,7 @@ from django.utils.text import slugify
 from federal_common.sources import EN, FR
 from time import sleep
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse, urljoin, ParseResult
+import copy
 import hashlib
 import logging
 import math
@@ -139,3 +140,10 @@ def get_french_parl_url(root_url, soup):
         root_url,
         soup(text=re.compile(r"^Français$"))[0].parent.parent.attrs["href"].replace(":80/", "/"),
     )
+
+
+def soup_to_text(soup):
+    new_soup = copy.copy(soup)
+    for br in new_soup.find_all("br"):
+        br.replace_with("\n")
+    return new_soup.get_text().strip()

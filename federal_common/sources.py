@@ -14,6 +14,7 @@ NAME_HOC_CONSTITUENCIES = {EN: "House of Commons, Constituencies", FR: "Chambre 
 NAME_HOC_HANSARD_XML = {EN: "House of Commons, Hansard XML", FR: "Chambre des communes, Hansard XML"}
 NAME_HOC_MEMBERS = {EN: "House of Commons, Members", FR: "Chambre des communes, Députés"}
 NAME_HOC_VOTES = {EN: "House of Commons, Votes", FR: "Chambre des communes, Votes"}
+NAME_HOC_VOTE_DETAILS = {EN: "House of Commons, Vote Details", FR: "Chambre des communes, Détails du vote"}
 NAME_LEGISINFO = {EN: "LEGISinfo", FR: "LEGISinfo"}
 NAME_LEGISINFO_NUMBER = {EN: "LEGISinfo, Number", FR: "LEGISinfo, Numéro"}
 NAME_LEGISINFO_TITLE = {EN: "LEGISinfo, Title", FR: "LEGISinfo, Titre"}
