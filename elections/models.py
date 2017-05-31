@@ -91,12 +91,6 @@ class ElectionRiding(models.Model):
         ]
         ordering = ("date", "riding__slug")
 
-    def __str__(self):
-        if self.general_election:
-            return "{}, {}".format(self.general_election, self.riding)
-        else:
-            return "{}, {}".format(self.by_election, self.riding)
-
     def consistency_check(self):
         assert self.general_election_id or self.by_election_id or not self.pk, "ElectionRidings must reference an election"
         assert not (self.general_election_id and self.by_election_id), "ElectionRidings cannot be for both general and by-elections"
@@ -139,4 +133,4 @@ class ElectionCandidate(models.Model):
         )
 
     def __str__(self):
-        return "{}, {}".format(self.election_riding, self.name)
+        return self.name

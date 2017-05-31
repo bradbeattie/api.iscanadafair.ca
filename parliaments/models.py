@@ -62,7 +62,7 @@ class Session(LinksMixin, models.Model):
         ordering = ("parliament__number", "number")
 
     def __str__(self):
-        return "{}, Session {}".format(self.parliament, self.number)
+        return self.slug
 
 
 class Province(NamesMixin, LinksMixin, models.Model):

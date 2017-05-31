@@ -1,16 +1,14 @@
 from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.utils.text import slugify
 from federal_common import sources
 from federal_common.sources import EN, FR
-from federal_common.utils import fetch_url, url_tweak, get_french_parl_url, dateparse, one_or_none, soup_to_text
-from parliaments.models import Session, Parliamentarian, Party
+from federal_common.utils import fetch_url, url_tweak, get_french_parl_url, dateparse, one_or_none, soup_to_text, get_cached_obj, get_cached_dict
+from parliaments.models import Session, Parliamentarian, Party, Riding
 from proceedings import models
 from tqdm import tqdm
-from unidecode import unidecode
 from urllib.parse import parse_qs, urlparse
-import json
+from urllib.parse import urljoin
 import logging
 import re
 
@@ -28,35 +26,50 @@ VOTE_MAPPING = {
 }
 HONORIFIC = re.compile(r"^(Mr|Mrs|Ms)\. ")
 PARTY_MAPPING = {
-    "Bloc Québécois": "bq",
-    "Conservative": "c",
-    "Liberal": "lib",
-    "NDP": "ndp",
     "Green Party": "gp",
-    "Forces et Démocratie": "sd",
 }
+WIDGET_ID = re.compile(r"/ParlDataWidgets/en/affiliation/([0-9]+)")
 RECORDED_VOTE_MAPPING = {
     (False, False, True): models.HouseVoteParticipant.VOTE_PAIRED,
     (False, True, False): models.HouseVoteParticipant.VOTE_NAY,
+    (False, True, True): models.HouseVoteParticipant.VOTE_NAY,  # Strange. See http://www.ourcommons.ca/Parliamentarians/en/votes/40/3/37/, Christian Paradis for an example
     (True, False, False): models.HouseVoteParticipant.VOTE_YEA,
+    (True, False, True): models.HouseVoteParticipant.VOTE_YEA,  # Strange. See http://www.ourcommons.ca/Parliamentarians/en/votes/40/3/160/, Paule Brunelle for an example
     (True, True, False): models.HouseVoteParticipant.VOTE_ABSTAINED,
 }
 PARLIAMENTARIAN_MAPPING = {
-    "Ms. Khristinn Kellie Leitch": "Kellie Leitch",
+    ("Candice Hoeppner", "manitoba-portage-lisgar"): "bergen-candice",
+    ("David A. Anderson", "british-columbia-victoria"): "anderson-david-1",
+    ("David Anderson", "british-columbia-victoria"): "anderson-david-1",
+    ("David Anderson", "saskatchewan-cypress-hills-grasslands"): "anderson-david-2",
+    ("Greg Francis Thompson", "new-brunswick-new-brunswick-southwest"): "thompson-gregory-francis",
+    ("Jean C. Lapierre", "quebec-outremont"): "lapierre-jean-c",
+    ("Gurbax S. Malhi", "ontario-bramalea-gore-malton"): "malhi-gurbax-singh",
+    ("Joseph Volpe", "ontario-eglinton-lawrence"): "volpe-giuseppe-joseph",
+    ("Judy A. Sgro", "ontario-humber-river-black-creek"): "sgro-judy",
+    ("Judy A. Sgro", "ontario-york-west"): "sgro-judy",
+    ("Khristinn Kellie Leitch", "ontario-simcoe-grey"): "leitch-k-kellie",
+    ("Robert D. Nault", "ontario-kenora"): "nault-robert-daniel",
+    ("Ruben John Efford", "newfoundland-and-labrador-avalon"): "efford-ruben-john",
+    ("Senator Josée Verner", "quebec-louis-saint-laurent"): "verner-josee",
+    ("Senator Norman E. Doyle", "newfoundland-and-labrador-st-johns-east"): "doyle-norman-e",
 }
 
 
 class Command(BaseCommand):
 
-    party_cache = {
-        "Independent": None,
-        "Conservative Independent": None,
-    }
-    parliamentarian_cache = {}
-
     def handle(self, *args, **options):
         if options["verbosity"] > 1:
             logger.setLevel(logging.DEBUG)
+
+        self.cached_parliamentarians = get_cached_dict(Parliamentarian.objects.filter(election_candidates__election_riding__date__year__gte=2000))
+        self.cached_ridings = get_cached_dict(Riding.objects.filter(election_ridings__date__year__gte=2000))
+        self.cached_parties = get_cached_dict(Party.objects.all())
+        self.cached_parties.update({
+            "Independent": [None],
+            "Conservative Independent": [None],
+            "Independent Conservative": [None],
+        })
 
         list_url = "http://www.ourcommons.ca/Parliamentarians/en/HouseVotes/Index"
         parl_soup = BeautifulSoup(fetch_url(list_url), "html.parser")
@@ -149,102 +162,61 @@ class Command(BaseCommand):
         vote.save()
 
         # Fetch the parliamentarian votes
-        # TODO: This has been temporarily disabled until party affiliation
-        #       is reinstated. In the interim, I'll scrape off the HTML instead.
-#        vote_xml = BeautifulSoup(
-#            fetch_url(url_tweak("http://www.ourcommons.ca/Parliamentarians/en/HouseVotes/ExportDetailsVotes?output=XML", update={
-#                "parliament": session.parliament.number,
-#                "session": session.number,
-#                "vote": vote.number,
-#            })),
-#            "lxml",
-#        )
-#        for participant_soup in vote_xml.find_all("voteparticipant"):
-#            print("SOUP", participant_soup)
-#            parliamentarian_name = participant_soup.find("name").text
-#            riding_name = participant_soup.find("constituencyname").text
-#            province_name = participant_soup.find("province").text
-#            party_name = participant_soup.find("party").text
-#
-#            try:
-#                province = self.province_cache[province_name]
-#            except KeyError:
-#                province = get_by_name_variant.get_province(
-#                    name=province_name,
-#                    search_name_source=search_name_source,
-#                )
-#                self.province_cache[province_name] = province
-#
-#            try:
-#                parliamentarian = self.parliamentarian_cache[(parliamentarian_name, riding_name)]
-#            except KeyError:
-#                parliamentarian = get_by_name_variant.get_parliamentarian(
-#                    election_candidates__election_riding__riding__province=province,
-#                    name=parliamentarian_name,
-#                    search_name_source=search_name_source,
-#                )
-#                self.parliamentarian_cache[(parliamentarian_name, riding_name)] = parliamentarian
-#
-#            try:
-#                party = self.party_cache[party_name]
-#            except KeyError:
-#                try:
-#                    party = get_by_name_variant.get_party(
-#                        name=party_name,
-#                        search_name_source=search_name_source,
-#                    )
-#                except get_by_name_variant.SkippedObject:
-#                    party = None
-#                self.party_cache[party_name] = party
-#
-#            try:
-#                voted = one_or_none(
-#                    vote_mapping[choice.name]
-#                    for choice in participant_soup.find("recordedvote").contents
-#                    if isinstance(choice, Tag) and choice.text == "1"
-#                )
-#            except AssertionError:
-#                voted = models.SittingVoteParticipant.VOTE_ABSTAINED
-#
-#            models.SittingVoteParticipant.objects.get_or_create(
-#                sitting_vote=sitting_vote,
-#                parliamentarian=parliamentarian,
-#                party=party,
-#                defaults={
-#                    "recorded_vote": voted,
-#                },
-#            )
-
-        print(vote)
+        # TODO: This has been temporarily written to scrape off of HTML
+        #       as the new XML format omits party affiliation.
         for row in soup[EN].select("#parlimant > tbody > tr"):  # Note the source code misspells "parliament"
-            hvp = models.HouseVoteParticipant(house_vote=vote)
+            self.fetch_vote_participant(row, vote, soup)
 
-            cells = row.find_all("td", recursive=False)
-            mp_name = cells[0].a.text.strip()
-            riding_name = cells[0].find_all("span", recursive=False)[1].text.strip()[1:-1]
-            party_name = cells[1].text.strip()
-            recorded_votes = (bool(cells[2].img), bool(cells[3].img), bool(cells[4].img))
-            print([mp_name, riding_name, party_name, recorded_votes])
+    def fetch_vote_participant(self, row, vote, soup):
+        hvp = models.HouseVoteParticipant(house_vote=vote)
+        cells = row.find_all("td", recursive=False)
+        mp_link = {EN: cells[0].a}
+        mp_name = {EN: mp_link[EN].text.strip()}
+        riding_name = cells[0].find_all("span", recursive=False)[1].text.strip()[1:-1]
+        party_name = cells[1].text.strip()
+        recorded_votes = (bool(cells[2].img), bool(cells[3].img), bool(cells[4].img))
 
+        try:
+            without_honorific = HONORIFIC.sub("", mp_name[EN])
+            parliamentarian = get_cached_obj(
+                self.cached_parliamentarians,
+                without_honorific,
+            )
+        except AssertionError:
             try:
-                modified_mp_name = PARLIAMENTARIAN_MAPPING.get(mp_name, (HONORIFIC.sub("", mp_name)))
-                parliamentarian = self.parliamentarian_cache[(modified_mp_name, riding_name)]
-            except KeyError:
-                parliamentarian = Parliamentarian.objects.filter(
-                    names__contains=json.dumps(modified_mp_name)[1:-1],
-                    election_candidates__election_riding__riding__slug__contains=slugify(unidecode(riding_name)),
-                ).distinct().get()
-                self.parliamentarian_cache[(modified_mp_name, riding_name)] = parliamentarian
-                # TODO: Add french and english names
-                # TODO: Add pop-up link
-            hvp.parliamentarian = parliamentarian
-
+                riding = get_cached_obj(self.cached_ridings, riding_name.replace("—", "--"))
+            except AssertionError:
+                logger.warning("ERR RIDING {}: {}".format(vote, riding_name))
+                return
             try:
-                party = self.party_cache[party_name]
-            except KeyError:
-                party = Party.objects.get(slug=PARTY_MAPPING[cells[1].text.strip()])
-                self.party_cache[party_name] = party
+                parliamentarian = get_cached_obj(
+                    self.cached_parliamentarians,
+                    PARLIAMENTARIAN_MAPPING.get((without_honorific, riding.slug)),
+                )
+            except AssertionError:
+                logger.warning("ERR PARLIMENTARIAN {}: {}".format(vote, (without_honorific, riding.slug)))
+                return
+        if sources.NAME_HOC_VOTES[EN] not in parliamentarian.names[EN]:
+            mp_link[FR] = soup[FR].find("a", href=re.compile(r"/ParlDataWidgets/fr/affiliation/{}".format(
+                WIDGET_ID.search(cells[0].a.attrs["href"]).groups()[0]
+            )))
+            mp_name[FR] = mp_link[FR].text.strip()
+            for lang in (EN, FR):
+                parliamentarian.names[lang][sources.NAME_HOC_VOTES[lang]] = mp_name[lang]
+                parliamentarian.links[lang][sources.NAME_HOC_VOTES[lang]] = urljoin(vote.links[lang][sources.NAME_HOC_VOTE_DETAILS[lang]], mp_link[lang].attrs["href"])
+            parliamentarian.save()
+        hvp.parliamentarian = parliamentarian
+
+        try:
+            party = get_cached_obj(self.cached_parties, PARTY_MAPPING.get(party_name, party_name))
             hvp.party = party
+        except AssertionError:
+            logger.warning("ERR PARTY {}".format(party_name))
+            return
 
+        try:
             hvp.recorded_vote = RECORDED_VOTE_MAPPING[recorded_votes]
-            hvp.save()
+        except KeyError:
+            logger.warning("ERR VOTE {} {}: {}".format(vote, mp_name, recorded_votes))
+            return
+        hvp.save()

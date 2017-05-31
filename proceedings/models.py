@@ -26,6 +26,29 @@ class Committee(NamesMixin, LinksMixin, models.Model):
         ordering = ("slug", )
 
 
+class Sitting(LinksMixin, models.Model):
+    """
+        ## Data sources
+
+        * [House of Commons' House Publications (35th Parliament onwards)](http://www.ourcommons.ca/documentviewer/en/house/latest-sitting)
+
+        ## Notes
+
+        * Some House Publication pages don't load properly (e.g. [Parliament 38, Session 1, Sitting 124A](http://www.ourcommons.ca/DocumentViewer/en/38-1/house/sitting-124A/journals)). I've contacted infonet@parl.gc.ca with these issues.
+    """
+    slug = models.SlugField(max_length=200, primary_key=True)
+    number = models.CharField(max_length=5, db_index=True)
+    session = models.ForeignKey(parliament_models.Session, related_name="sittings")
+    date = models.DateField(unique=True)
+
+    class Meta:
+        unique_together = ("session", "number")
+        ordering = ("date", )
+
+    def __str__(self):
+        return self.slug
+
+
 class Recording(NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
@@ -41,6 +64,7 @@ class Recording(NamesMixin, LinksMixin, models.Model):
           * (Split event) ParlVU speaks of [HoC Sitting No. A-13 (2008-12-04)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20081204/-1/18081), but OurCommons thinks [#13 is on 2008-12-04](http://www.ourcommons.ca/DocumentViewer/en/40-1/house/sitting-13/order-notice) and #13A doesn't exist.
           * (Split event) ParlVU speaks of [HoC Sitting No. A-36 (2007-12-12)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20071212/-1/24179), but OurCommons thinks [#36 is on 2007-12-12](http://www.ourcommons.ca/DocumentViewer/en/39-2/house/sitting-36/order-notice) and #36A doesn't exist.
           * (Special sitting with no publications) ParlVU speaks of [HoC Sitting No. 888 (2006-09-22)](http://parlvu.parl.gc.ca/XRender/en/PowerBrowser/PowerBrowserV2/20060922/-1/24055), but OurCommons thinks [#51 is on 2006-09-22](http://www.ourcommons.ca/DocumentViewer/en/39-1/house/sitting-51/order-notice) and #888 doesn't exist.
+        * [CPAC's Video Archive](http://www.cpac.ca/en/video-archive/) is a good resource for other recordings (e.g. news conferences, television appearances, parliamentary videos prior to the 39th parliament, etc).
     """
     CATEGORY_AUDIO_ONLY = 1
     CATEGORY_TELEVISED = 2
@@ -69,33 +93,10 @@ class Recording(NamesMixin, LinksMixin, models.Model):
         (STATUS_NOT_STARTED, "Not Started"),
     ))
     committee = models.ForeignKey(Committee, null=True, blank=True, related_name="recordings")
+    sitting = models.ForeignKey(Sitting, null=True, blank=True, related_name="recordings")
 
     class Meta:
         ordering = ("scheduled_start", "slug")
-
-
-class Sitting(LinksMixin, models.Model):
-    """
-        ## Data sources
-
-        * [House of Commons' House Publications (35th Parliament onwards)](http://www.ourcommons.ca/documentviewer/en/house/latest-sitting)
-
-        ## Notes
-
-        * Some House Publication pages don't load properly (e.g. [Parliament 38, Session 1, Sitting 124A](http://www.ourcommons.ca/DocumentViewer/en/38-1/house/sitting-124A/journals)). I've contacted infonet@parl.gc.ca with these issues.
-    """
-    slug = models.SlugField(max_length=200, primary_key=True)
-    number = models.CharField(max_length=5, db_index=True)
-    session = models.ForeignKey(parliament_models.Session, related_name="sittings")
-    date = models.DateField(unique=True)
-    recording = models.ForeignKey(Recording, null=True, blank=True)
-
-    class Meta:
-        unique_together = ("session", "number")
-        ordering = ("date", )
-
-    def __str__(self):
-        return "Sitting {}".format(self.date)
 
 
 class Bill(NamesMixin, LinksMixin, models.Model):
@@ -143,7 +144,7 @@ class HouseVote(LinksMixin, models.Model):
         ordering = ("sitting__date", "slug")
 
     def __str__(self):
-        return "{}, House Vote {}".format(self.sitting, self.number)
+        return self.slug
 
 
 class HouseVoteParticipant(models.Model):

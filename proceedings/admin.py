@@ -8,7 +8,6 @@ class SittingAdmin(HasLinks, CommonAdmin):
     list_display = ("slug", "date", "session", "show_links")
     list_filter = ("session__parliament", )
     search_fields = ("slug", )
-    raw_id_fields = ("recording", )
 
 
 class CommitteeAdmin(HasNames, HasLinks, CommonAdmin):
@@ -27,6 +26,7 @@ class RecordingAdmin(HasNames, HasLinks, CommonAdmin):
     list_display = ("slug", "show_names")
     list_filter = ("category", "status")
     search_fields = ("slug", )
+    raw_id_fields = ("sitting", )
 
 
 class HouseVoteAdmin(HasLinks, CommonAdmin):

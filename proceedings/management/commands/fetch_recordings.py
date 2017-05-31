@@ -25,7 +25,8 @@ ROOM = re.compile(r"(Room|Pièce) ([^,]+), (.*)")
 SUFFIX = re.compile(r"[ -]+$")
 TZ = pytz.timezone("America/Toronto")
 HOUSE_PUBLICATIONS = "http://www.ourcommons.ca/documentviewer/en/house/latest-sitting"
-HOC_SITTING_NO = re.compile("^HoC Sitting No. (.*)$")
+HOC_SITTING_NO = re.compile(r"^HoC Sitting No. (.*)$")
+HOC_QUESTION_PERIOD_NO = re.compile(r"^Question Period for HoC Sitting No. (.*)")
 COMMITTEE_CODE = re.compile("^([A-Z][A-Z0-9]+) Meeting")
 WHITESPACE = re.compile(r"\s+")
 REPLACEMENTS = {
@@ -146,29 +147,30 @@ class Command(BaseCommand):
                 prefix = "-".join((code.lower(), session.slug, ""))
                 recording.committee = models.Committee.objects.get(Q(slug__startswith=prefix) | Q(slug__startswith=prefix.replace("aano-", "inan-").replace("saan-", "sina-")))
 
-            recording.save()
+            if recording.status != models.Recording.STATUS_CANCELLED:
+                for regex in (HOC_SITTING_NO, HOC_QUESTION_PERIOD_NO):
+                    match = regex.search(title)
+                    if match:
+                        number = "".join(reversed(match.groups()[0].split("-"))).lstrip("0")
+                        sitting_number = models.Sitting.objects.filter(date__gt=day - timedelta(days=120), date__lt=day + timedelta(days=120), number=number).first()
+                        sitting_day = models.Sitting.objects.filter(date=day).first()
+                        if sitting_day and sitting_day.number == number:
+                            recording.sitting = sitting_day
+                        elif day < date.today():
+                            logger.warning("ParlVU speaks of [{} ({})]({}), but OurCommons thinks {} and {}.".format(
+                                title,
+                                day,
+                                recording.links[EN],
+                                "[#{} is on {}]({})".format(
+                                    sitting_day.number,
+                                    sitting_day.date,
+                                    list(sitting_day.links[EN].values())[0]
+                                ) if sitting_day else "no session exists on this date".format(day),
+                                "[#{} is on {}]({})".format(
+                                    sitting_number.number,
+                                    sitting_number.date,
+                                    list(sitting_number.links[EN].values())[0],
+                                ) if sitting_number else "#{} doesn't exist".format(number),
+                            ))
 
-            match = HOC_SITTING_NO.search(title)
-            if match and recording.status != models.Recording.STATUS_CANCELLED:
-                number = "".join(reversed(match.groups()[0].split("-"))).lstrip("0")
-                sitting_number = models.Sitting.objects.filter(date__gt=day - timedelta(days=120), date__lt=day + timedelta(days=120), number=number).first()
-                sitting_day = models.Sitting.objects.filter(date=day).first()
-                if sitting_day and sitting_day.number == number:
-                    sitting_day.recording = recording
-                    sitting_day.save()
-                elif day < date.today():
-                    logger.warning("ParlVU speaks of [{} ({})]({}), but OurCommons thinks {} and {}.".format(
-                        title,
-                        day,
-                        recording.links[EN],
-                        "[#{} is on {}]({})".format(
-                            sitting_day.number,
-                            sitting_day.date,
-                            list(sitting_day.links[EN].values())[0]
-                        ) if sitting_day else "no session exists on this date".format(day),
-                        "[#{} is on {}]({})".format(
-                            sitting_number.number,
-                            sitting_number.date,
-                            list(sitting_number.links[EN].values())[0],
-                        ) if sitting_number else "#{} doesn't exist".format(number),
-                    ))
+                recording.save()
