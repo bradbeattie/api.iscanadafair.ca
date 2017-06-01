@@ -59,10 +59,10 @@ class Command(BaseCommand):
                 allow_redirects=True,
             ), "html.parser")
             riding.names[lang][sources.NAME_EC[lang]] = soup.select("h3.HeaderInfo1")[0].text
-            riding.major_census_subdivisions = list(filter(None, map(
+            riding.major_census_subdivisions = sorted(set(filter(None, map(
                 lambda city: city.strip().rstrip("*"),
                 soup.find("h2", text=CITIES).find_next_sibling("p").text.splitlines(),
-            )))
+            ))))
             riding.area_km2 = int(sources.WHITESPACE.sub("", soup.find("h2", text=AREA).find_next_sibling("p").text.strip()).replace("km2", "").replace(",", ""))
         riding.save()
 
