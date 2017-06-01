@@ -37,7 +37,7 @@ class Command(BaseCommand):
         skipped_codes = set()
         codes_to_ridings = dict()
         soup = BeautifulSoup(
-            fetch_url(parliament.links[EN][sources.NAME_LOP_PARLIAMENT[EN]], use_cache=True),
+            fetch_url(parliament.links[EN][sources.NAME_LOP_PARLIAMENT[EN]]),
             "html.parser",
         )
         for select in (
@@ -70,7 +70,7 @@ class Command(BaseCommand):
                         skipped_codes.add(code)
 
         soup = BeautifulSoup(
-            fetch_url(parliament.links[FR][sources.NAME_LOP_PARLIAMENT[FR]], use_cache=True),
+            fetch_url(parliament.links[FR][sources.NAME_LOP_PARLIAMENT[FR]]),
             "html.parser",
         )
         for select in (

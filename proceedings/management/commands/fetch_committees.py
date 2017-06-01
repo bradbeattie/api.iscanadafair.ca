@@ -61,7 +61,7 @@ class Command(BaseCommand):
     def fetch_hoc_committees_session(self, session, session_url):
         for link in tqdm(
             BeautifulSoup(
-                fetch_url(session_url, use_cache=True),
+                fetch_url(session_url),
                 "html.parser",
             ).select(".committees-list .accordion-content a"),
             desc=str(session),
@@ -86,10 +86,7 @@ class Command(BaseCommand):
 
     def fetch_senate_committees_session(self, session, session_url):
         for link in tqdm(
-            BeautifulSoup(
-                fetch_url(session_url, use_cache=True),
-                "html.parser",
-            ).select(".committee-list-boxes-wrapper a"),
+            BeautifulSoup(fetch_url(session_url), "html.parser").select(".committee-list-boxes-wrapper a"),
             desc=str(session),
             unit="committee",
         ):

@@ -1,6 +1,7 @@
 from django.db import models
-from federal_common.models import NamesMixin, LinksMixin
 from django.utils.html import format_html
+from django_extensions.db.fields import json
+from federal_common.models import NamesMixin, LinksMixin
 import os
 
 
@@ -96,6 +97,18 @@ class Parliamentarian(NamesMixin, LinksMixin, models.Model):
     birthtext = models.CharField(max_length=10, db_index=True, help_text="Exact birth dates for parliamentarians in the 1800s sometimes omitted day or month")
     birthdate = models.DateField(null=True, db_index=True)
     lop_item_code = models.SlugField(db_index=True, unique=True)
+    constituency_offices = json.JSONField()
+    hill_phone = models.CharField(max_length=20)
+    hill_fax = models.CharField(max_length=20)
+
+    LANG_EN = 1
+    LANG_FR = 2
+    LANG_BOTH = 3
+    preferred_language = models.PositiveSmallIntegerField(choices=(
+        (LANG_EN, "English"),
+        (LANG_FR, "Français"),
+        (LANG_BOTH, "English / Français"),
+    ), null=True)
 
     class Meta:
         ordering = ("slug", )
@@ -122,6 +135,10 @@ class Riding(NamesMixin, LinksMixin, models.Model):
     related_historically = models.ManyToManyField("self", blank=True)
     related_geographically = models.ManyToManyField("self", blank=True)
     electoral_district_number = models.PositiveIntegerField(null=True, db_index=True)
+    major_census_divisions = json.JSONField()
+    area_km2 = models.PositiveIntegerField(null=True)
+    postal_code_fsas = json.JSONField()
+    current_parliamentarian = models.OneToOneField(Parliamentarian, null=True, related_name="riding")
 
     class Meta:
         ordering = ("slug", )

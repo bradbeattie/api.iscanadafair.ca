@@ -76,13 +76,13 @@ class Command(BaseCommand):
                             )), urljoin(url, link.attrs["href"]))
 
     def augment_parliamentarian_open_parliament(self, parliamentarian, url):
-        soup = BeautifulSoup(fetch_url(url, use_cache=True), "html.parser")
+        soup = BeautifulSoup(fetch_url(url), "html.parser")
         for lang in (EN, FR):
             parliamentarian.names[lang][sources.NAME_OP[lang]] = soup.find("h1").text
         parliamentarian.links[EN][sources.NAME_OP[EN]] = url
         for link in soup.select("ul.bulleted a"):
             if link.text == "Wikipedia":
-                wiki_soup = BeautifulSoup(fetch_url(link.attrs["href"], use_cache=True, allow_redirects=True), "html.parser")
+                wiki_soup = BeautifulSoup(fetch_url(link.attrs["href"], allow_redirects=True), "html.parser")
                 parliamentarian.links[EN][sources.NAME_WIKI[EN]] = urljoin(link.attrs["href"], wiki_soup.select("#ca-nstab-main a")[0].attrs["href"])
                 try:
                     parliamentarian.links[FR][sources.NAME_WIKI[FR]] = wiki_soup.select(".interwiki-fr a.interlanguage-link-target")[0].attrs["href"]

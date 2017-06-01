@@ -31,7 +31,7 @@ class Command(BaseCommand):
         soup = BeautifulSoup(fetch_url(url_tweak(
             election.links[EN][sources.NAME_WIKI[EN]],
             update={"action": "edit"},
-        ), use_cache=True), "html.parser")
+        )), "html.parser")
 
         # Get the info box
         page_source = soup.select("#wpTextbox1")[0].text

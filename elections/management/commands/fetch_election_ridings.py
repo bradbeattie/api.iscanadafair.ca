@@ -83,7 +83,7 @@ class Command(BaseCommand):
         else:
             url = election.links[EN][sources.NAME_LOP_BY_ELECTION[EN]]
             kwargs = {"by_election": election}
-        soup = BeautifulSoup(fetch_url(url, use_cache=True), "html.parser")
+        soup = BeautifulSoup(fetch_url(url), "html.parser")
 
         province = None
         election_riding = None
@@ -168,7 +168,7 @@ class Command(BaseCommand):
         for lang in (EN, FR):
             riding.links[lang][sources.NAME_LOP_RIDING_HISTORY[lang]] = url_tweak(url, update={"Language": sources.LANG_LOP[lang]})
             try:
-                fetch_url(riding.links[lang][sources.NAME_LOP_RIDING_HISTORY[lang]], use_cache=True)
+                fetch_url(riding.links[lang][sources.NAME_LOP_RIDING_HISTORY[lang]])
             except Exception as e:
                 logger.exception(e)
         riding.save()
@@ -204,7 +204,7 @@ class Command(BaseCommand):
                 popup_soup = BeautifulSoup(fetch_url("http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer-party.asp?lang={}&Party={}".format(
                     sources.LANG_LOP[lang],
                     PARTY_POPUP.search(popup).groups()[0],
-                ), use_cache=True), "html.parser")
+                )), "html.parser")
                 party.names[lang][sources.NAME_LOP_PARTY_SHORT[lang]] = popup_soup.find_all("td")[0].text.strip()
                 party.names[lang][sources.NAME_LOP_RIDING_HISTORY[lang]] = popup_soup.find_all("td")[1].text.strip()
             party.slug = slugify(name)

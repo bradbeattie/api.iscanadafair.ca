@@ -9,9 +9,12 @@ from parliaments import models
 from tqdm import tqdm
 from urllib.parse import parse_qs, urlparse
 import logging
+import re
 
 
 logger = logging.getLogger(__name__)
+CITIES = re.compile(r"^(Major census subdivisions|Principales subdivisions de recensement)")
+AREA = re.compile(r"^(Area|Superficie)$")
 
 
 class Command(BaseCommand):
@@ -54,9 +57,13 @@ class Command(BaseCommand):
             soup = BeautifulSoup(fetch_url(
                 riding.links[lang][sources.NAME_EC_PROFILE[lang]],
                 allow_redirects=True,
-                use_cache=True,
             ), "html.parser")
             riding.names[lang][sources.NAME_EC[lang]] = soup.select("h3.HeaderInfo1")[0].text
+            riding.major_census_subdivisions = list(filter(None, map(
+                lambda city: city.strip().rstrip("*"),
+                soup.find("h2", text=CITIES).find_next_sibling("p").text.splitlines(),
+            )))
+            riding.area_km2 = int(sources.WHITESPACE.sub("", soup.find("h2", text=AREA).find_next_sibling("p").text.strip()).replace("km2", "").replace(",", ""))
         riding.save()
 
         for link in soup.select("ul.toc a"):

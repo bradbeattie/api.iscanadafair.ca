@@ -11,4 +11,5 @@ mysql parliamentary_data < after-step-1.sql && \
 ./manage.py augment_parties_ec && \
 ./manage.py augment_parliamentarians_op && \
 ./manage.py augment_parliamentarians_hoc && \
+./manage.py augment_ridings_fsas && \
 mysqldump parliamentary_data > after-step-2.sql

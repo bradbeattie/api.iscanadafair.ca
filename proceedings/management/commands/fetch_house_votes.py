@@ -96,7 +96,7 @@ class Command(BaseCommand):
         session.links[EN][sources.NAME_HOC_VOTES[EN]] = url_tweak(list_url, update={"sessionId": remote_session_id})
         session.links[FR][sources.NAME_HOC_VOTES[FR]] = get_french_parl_url(
             session.links[EN][sources.NAME_HOC_VOTES[EN]],
-            BeautifulSoup(fetch_url(session.links[EN][sources.NAME_HOC_VOTES[EN]], use_cache=True), "lxml"),
+            BeautifulSoup(fetch_url(session.links[EN][sources.NAME_HOC_VOTES[EN]]), "lxml"),
         )
         session.save()
 

@@ -55,7 +55,7 @@ class Command(BaseCommand):
                             parliament.number,
                         )
                 parliament.seats = int(BeautifulSoup(
-                    fetch_url(parliament.links[EN][sources.NAME_LOP_PARLIAMENT[EN]], use_cache=True),
+                    fetch_url(parliament.links[EN][sources.NAME_LOP_PARLIAMENT[EN]]),
                     "html.parser",
                 ).select("#ctl00_cphContent_ctl06_pnlSectionPartyStandingsContent .GridRows")[0].contents[-1].text)
                 parliament.save()

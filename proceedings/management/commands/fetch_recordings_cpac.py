@@ -36,5 +36,3 @@ class Command(BaseCommand):
         url[EN] = ensure_trailing_slash(url[EN])
         soup = BeautifulSoup(fetch_url(url[EN], use_cache=settings.DEBUG), "html.parser")
         url[FR] = ensure_trailing_slash(urljoin(url[EN], one_or_none(soup.select("#language-toggle")).attrs["href"]))
-        from pprint import pprint
-        pprint(url)

@@ -58,7 +58,7 @@ def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False, 
         if mc.get(url_hash_cs):
             logger.warning("Fetch suppressed due to recent failure: {}".format(url))
             raise FetchSuppressed(url)
-        logger.info("Fetching {} (throttle {}s)".format(url, THROTTLE / 10))
+        logger.info("Fetching {} (throttle {}s)".format(url, THROTTLE / (10 if settings.DEBUG else 1)))
         while True:
             try:
                 sleep(THROTTLE / 4)
@@ -70,7 +70,7 @@ def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False, 
                 break
             except requests.exceptions.ConnectionError as e:
                 THROTTLE = (THROTTLE + 1) * 2
-                logger.warning(e, "(throttle {}s)".format(THROTTLE / 10))
+                logger.warning(e, "(throttle {}s)".format(THROTTLE / (10 if settings.DEBUG else 1)))
         if response.status_code != 200:
             mc.set(url_hash_cs, True, 86400 * 3)
             raise FetchFailure(url, response.status_code, response.content)

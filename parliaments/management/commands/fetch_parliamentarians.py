@@ -46,10 +46,7 @@ class Command(BaseCommand):
         logger.debug("Fetch parliamentarians, {}".format(parliament))
         url = parliament.links[EN][sources.NAME_LOP_PARLIAMENT[EN]]
         for link in tqdm(
-            BeautifulSoup(
-                fetch_url(url, use_cache=True),
-                "html.parser",
-            ).select("a[href^=Parliamentarian]"),
+            BeautifulSoup(fetch_url(url), "html.parser").select("a[href^=Parliamentarian]"),
             desc=str(parliament),
             unit="parliamentarian",
         ):
@@ -73,7 +70,7 @@ class Command(BaseCommand):
             parliamentarian.names[lang][sources.NAME_LOP_PARLIAMENT[lang]] = name
             url = url_tweak(lang_naive_url, update={"Language": sources.LANG_LOP[lang]})
             parliamentarian.links[lang][sources.NAME_LOP_PARLIAMENTARIAN[lang]] = url
-            soup = BeautifulSoup(fetch_url(url, use_cache=True), "html.parser")
+            soup = BeautifulSoup(fetch_url(url), "html.parser")
             parliamentarian.names[lang][sources.NAME_LOP_PARLIAMENTARIAN[lang]] = sources.WHITESPACE.sub(" ", soup.select("#ctl00_cphContent_lblTitle")[0].text)
             for link in soup.select("#ctl00_cphContent_dataLinks a"):
                 parliamentarian.links[lang][sources.AVAILABILITY_WARNINGS.sub("", link.text.strip())] = link.attrs["href"]
