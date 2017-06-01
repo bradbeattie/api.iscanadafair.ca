@@ -135,7 +135,7 @@ class Riding(NamesMixin, LinksMixin, models.Model):
     related_historically = models.ManyToManyField("self", blank=True)
     related_geographically = models.ManyToManyField("self", blank=True)
     electoral_district_number = models.PositiveIntegerField(null=True, db_index=True)
-    major_census_divisions = json.JSONField()
+    major_census_subdivisions = json.JSONField()
     area_km2 = models.PositiveIntegerField(null=True)
     postal_code_fsas = json.JSONField()
     current_parliamentarian = models.OneToOneField(Parliamentarian, null=True, related_name="riding")
