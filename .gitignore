@@ -3,6 +3,7 @@
 *.sqlite
 *.swp
 .collected_static
+.coverage
 .env*
 .ipynb_checkpoints/
 .uploaded_media

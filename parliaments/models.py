@@ -34,8 +34,8 @@ class Parliament(LinksMixin, models.Model):
         * [Wikipedia's List of Canadian federal parliaments](https://en.wikipedia.org/wiki/List_of_Canadian_federal_parliaments)
     """
     number = models.PositiveSmallIntegerField(primary_key=True)
-    government_party = models.ForeignKey(Party, null=True, related_name="governed_parliaments")
-    seats = models.PositiveSmallIntegerField(help_text="Aggregate", null=True)
+    government_party = models.ForeignKey(Party, null=True, related_name="governed_parliaments", db_index=True)
+    seats = models.PositiveSmallIntegerField(help_text="Aggregate", null=True, db_index=True)
 
     class Meta:
         ordering = ("number", )
@@ -51,12 +51,12 @@ class Session(LinksMixin, models.Model):
         * [Library of Parliament's Parliament Profiles](http://www.lop.parl.gc.ca/parlinfo/Lists/Parliament.aspx)
     """
     slug = models.SlugField(max_length=200, primary_key=True)
-    parliament = models.ForeignKey(Parliament, related_name="sessions")
+    parliament = models.ForeignKey(Parliament, related_name="sessions", db_index=True)
     number = models.PositiveSmallIntegerField(db_index=True)
     date_start = models.DateField(db_index=True)
     date_end = models.DateField(null=True, db_index=True)
-    sittings_house = models.PositiveSmallIntegerField()
-    sittings_senate = models.PositiveSmallIntegerField()
+    sittings_house = models.PositiveSmallIntegerField(db_index=True)
+    sittings_senate = models.PositiveSmallIntegerField(db_index=True)
 
     class Meta:
         unique_together = ("parliament", "number")
@@ -98,8 +98,8 @@ class Parliamentarian(NamesMixin, LinksMixin, models.Model):
     birthdate = models.DateField(null=True, db_index=True)
     lop_item_code = models.SlugField(db_index=True, unique=True)
     constituency_offices = json.JSONField()
-    hill_phone = models.CharField(max_length=20)
-    hill_fax = models.CharField(max_length=20)
+    hill_phone = models.CharField(max_length=20, db_index=True)
+    hill_fax = models.CharField(max_length=20, db_index=True)
 
     LANG_EN = 1
     LANG_FR = 2
@@ -108,7 +108,7 @@ class Parliamentarian(NamesMixin, LinksMixin, models.Model):
         (LANG_EN, "English"),
         (LANG_FR, "Français"),
         (LANG_BOTH, "English / Français"),
-    ), null=True)
+    ), null=True, db_index=True)
 
     class Meta:
         ordering = ("slug", )
@@ -136,9 +136,9 @@ class Riding(NamesMixin, LinksMixin, models.Model):
     related_geographically = models.ManyToManyField("self", blank=True)
     electoral_district_number = models.PositiveIntegerField(null=True, db_index=True)
     major_census_subdivisions = json.JSONField()
-    area_km2 = models.PositiveIntegerField(null=True)
+    area_km2 = models.PositiveIntegerField(null=True, db_index=True)
     postal_code_fsas = json.JSONField()
-    current_parliamentarian = models.OneToOneField(Parliamentarian, null=True, related_name="riding")
+    current_parliamentarian = models.OneToOneField(Parliamentarian, null=True, related_name="riding", db_index=True)
 
     class Meta:
         ordering = ("slug", )

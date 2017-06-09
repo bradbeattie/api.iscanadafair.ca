@@ -23,7 +23,7 @@ locations = {}
 CACHE_BEFORE = timedelta(days=0 if settings.DEBUG else 90)
 ROOM = re.compile(r"(Room|Pièce) ([^,]+), (.*)")
 SUFFIX = re.compile(r"[ -]+$")
-TZ = pytz.timezone("America/Toronto")
+TZ = pytz.timezone(settings.TIME_ZONE)
 HOUSE_PUBLICATIONS = "http://www.ourcommons.ca/documentviewer/en/house/latest-sitting"
 HOC_SITTING_NO = re.compile(r"^HoC Sitting No. (.*)$")
 HOC_QUESTION_PERIOD_NO = re.compile(r"^Question Period for HoC Sitting No. (.*)")

@@ -15,12 +15,12 @@ class Committee(NamesMixin, LinksMixin, models.Model):
     CHAMBER_HOC = 1
     CHAMBER_SEN = 2
     CHAMBER_JOINT = 3
-    session = models.ForeignKey(parliament_models.Session, related_name="committees")
+    session = models.ForeignKey(parliament_models.Session, related_name="committees", db_index=True)
     chamber = models.PositiveSmallIntegerField(choices=(
         (CHAMBER_HOC, "House of Commons"),
         (CHAMBER_SEN, "Senate"),
         (CHAMBER_JOINT, "Joint committee"),
-    ))
+    ), db_index=True)
 
     class Meta:
         ordering = ("slug", )
@@ -38,7 +38,7 @@ class Sitting(LinksMixin, models.Model):
     """
     slug = models.SlugField(max_length=200, primary_key=True)
     number = models.CharField(max_length=5, db_index=True)
-    session = models.ForeignKey(parliament_models.Session, related_name="sittings")
+    session = models.ForeignKey(parliament_models.Session, related_name="sittings", db_index=True)
     date = models.DateField(unique=True)
 
     class Meta:
@@ -75,10 +75,10 @@ class Recording(NamesMixin, LinksMixin, models.Model):
     STATUS_CANCELLED = 2
     STATUS_NOT_STARTED = 3
 
-    scheduled_start = models.DateTimeField()
-    scheduled_end = models.DateTimeField()
-    actual_start = models.DateTimeField(null=True)
-    actual_end = models.DateTimeField(null=True)
+    scheduled_start = models.DateTimeField(db_index=True)
+    scheduled_end = models.DateTimeField(db_index=True)
+    actual_start = models.DateTimeField(null=True, db_index=True)
+    actual_end = models.DateTimeField(null=True, db_index=True)
     location = json.JSONField()
     category = models.PositiveSmallIntegerField(choices=(
         (CATEGORY_AUDIO_ONLY, "Audio only"),
@@ -86,14 +86,14 @@ class Recording(NamesMixin, LinksMixin, models.Model):
         (CATEGORY_IN_CAMERA, "In Camera"),
         (CATEGORY_NO_BROADCAST, "No Broadcast"),
         (CATEGORY_TRAVEL, "Travel"),
-    ))
+    ), db_index=True)
     status = models.PositiveSmallIntegerField(choices=(
         (STATUS_ADJOURNED, "Adjourned"),
         (STATUS_CANCELLED, "Cancelled"),
         (STATUS_NOT_STARTED, "Not Started"),
-    ))
-    committee = models.ForeignKey(Committee, null=True, blank=True, related_name="recordings")
-    sitting = models.ForeignKey(Sitting, null=True, blank=True, related_name="recordings")
+    ), db_index=True)
+    committee = models.ForeignKey(Committee, null=True, blank=True, related_name="recordings", db_index=True)
+    sitting = models.ForeignKey(Sitting, null=True, blank=True, related_name="recordings", db_index=True)
 
     class Meta:
         ordering = ("scheduled_start", "slug")
@@ -112,7 +112,7 @@ class Bill(NamesMixin, LinksMixin, models.Model):
         * [Bills from the senate](?slug__contains=s)
         * [Bills that mention Vancouver](?names__icontains=vancouver)
     """
-    session = models.ForeignKey(parliament_models.Session, related_name="bills")
+    session = models.ForeignKey(parliament_models.Session, related_name="bills", db_index=True)
     committees = models.ManyToManyField(Committee, related_name="bills")
 
     class Meta:
@@ -130,15 +130,15 @@ class HouseVote(LinksMixin, models.Model):
     RESULT_TIE = 3
 
     slug = models.SlugField(max_length=200, primary_key=True)
-    sitting = models.ForeignKey(Sitting, related_name="house_votes")
+    sitting = models.ForeignKey(Sitting, related_name="house_votes", db_index=True)
     number = models.PositiveSmallIntegerField(db_index=True)
-    bill = models.ForeignKey(Bill, blank=True, null=True, related_name="house_votes")
+    bill = models.ForeignKey(Bill, blank=True, null=True, related_name="house_votes", db_index=True)
     context = json.JSONField()
     result = models.PositiveSmallIntegerField(choices=(
         (RESULT_NEGATIVED, "Negatived"),
         (RESULT_AGREED_TO, "Agreed To"),
         (RESULT_TIE, "Tie"),
-    ))
+    ), db_index=True)
 
     class Meta:
         ordering = ("sitting__date", "slug")
@@ -162,18 +162,49 @@ class HouseVoteParticipant(models.Model):
     VOTE_PAIRED = 3
     VOTE_ABSTAINED = 4
 
-    house_vote = models.ForeignKey(HouseVote, related_name="house_vote_participants")
-    parliamentarian = models.ForeignKey(parliament_models.Parliamentarian, related_name="house_vote_participants")
-    party = models.ForeignKey(parliament_models.Party, related_name="house_vote_participants", null=True)
+    house_vote = models.ForeignKey(HouseVote, related_name="house_vote_participants", db_index=True)
+    parliamentarian = models.ForeignKey(parliament_models.Parliamentarian, related_name="house_vote_participants", db_index=True)
+    party = models.ForeignKey(parliament_models.Party, related_name="house_vote_participants", null=True, db_index=True)
     recorded_vote = models.PositiveSmallIntegerField(choices=(
         (VOTE_NAY, "Nay"),
         (VOTE_YEA, "Yea"),
         (VOTE_PAIRED, "Paired"),
         (VOTE_ABSTAINED, "Abstained"),
-    ))
+    ), db_index=True)
 
     class Meta:
         unique_together = ("house_vote", "parliamentarian")
 
     def __str__(self):
         return "{}, {}, {}".format(self.house_vote, self.get_recorded_vote_display())
+
+
+class HansardBlock(models.Model):
+    """
+        ## Data sources
+
+        * [House of Commons' Hansard XML (39th Parliament onwards)](http://www.ourcommons.ca/documentviewer/en/house/latest-sitting)
+
+        ## Notes
+
+        * TODO: Describe all the problems with the inconsistent data
+    """
+    CATEGORY_INTERVENTION = 1
+
+    slug = models.SlugField(max_length=200, primary_key=True)
+    sitting = models.ForeignKey(Sitting, db_index=True)
+    index = models.PositiveIntegerField(db_index=True)  # TODO: Rename to "number" to be consistent with other classes?
+    start_approx = models.DateTimeField(db_index=True)
+    content = json.JSONField(help_text="An array of `{lang: '(EN|FR)', EN: '...', FR: '...'}`")
+    parliamentarian = models.ForeignKey(parliament_models.Parliamentarian, related_name="hansard_blocks", null=True, db_index=True)
+    # TODO: ADD THIS CATEGORY FIELD IN
+    # category = models.PositiveSmallIntegerField(choices=(
+    #   (CATEGORY_INTERVENTION, "Intervention"),
+    # )
+
+    class Meta:
+        unique_together = ("sitting", "index")
+        ordering = ("start_approx", "index")
+
+    def __str__(self):
+        return self.slug

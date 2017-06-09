@@ -29,6 +29,13 @@ class RecordingAdmin(HasNames, HasLinks, CommonAdmin):
     raw_id_fields = ("sitting", )
 
 
+class HansardBlockAdmin(HasNames, HasLinks, CommonAdmin):
+    list_display = ("slug", "sitting")
+    list_filter = ("sitting__session__parliament", )
+    search_fields = ("slug", )
+    raw_id_fields = ("sitting", )
+
+
 class HouseVoteAdmin(HasLinks, CommonAdmin):
     list_display = ("slug", "show_links", "show_context")
     raw_id_fields = ("bill", )
@@ -50,4 +57,5 @@ admin.site.register(models.Committee, CommitteeAdmin)
 admin.site.register(models.Sitting, SittingAdmin)
 admin.site.register(models.Recording, RecordingAdmin)
 admin.site.register(models.HouseVote, HouseVoteAdmin)
+admin.site.register(models.HansardBlock, HansardBlockAdmin)
 admin.site.register(models.HouseVoteParticipant, HouseVoteParticipantAdmin)
