@@ -189,22 +189,34 @@ class HansardBlock(models.Model):
 
         * TODO: Describe all the problems with the inconsistent data
     """
-    CATEGORY_INTERVENTION = 1
+    CATEGORY_COMMITTEE = 1
+    CATEGORY_DIVISION = 2
+    CATEGORY_INTERVENTION = 3
+    CATEGORY_MEMBERLIST = 4
+    CATEGORY_WRITTEN_QUESTION = 5
+    CATEGORY_WRITTEN_RESPONSE = 6
 
     slug = models.SlugField(max_length=200, primary_key=True)
     sitting = models.ForeignKey(Sitting, db_index=True)
-    index = models.PositiveIntegerField(db_index=True)  # TODO: Rename to "number" to be consistent with other classes?
+    number = models.PositiveIntegerField(db_index=True)  # TODO: Rename to "number" to be consistent with other classes?
     start_approx = models.DateTimeField(db_index=True)
-    content = json.JSONField(help_text="An array of `{lang: '(EN|FR)', EN: '...', FR: '...'}`")
+    metadata = json.JSONField()
+    content = json.JSONField()
     parliamentarian = models.ForeignKey(parliament_models.Parliamentarian, related_name="hansard_blocks", null=True, db_index=True)
-    # TODO: ADD THIS CATEGORY FIELD IN
-    # category = models.PositiveSmallIntegerField(choices=(
-    #   (CATEGORY_INTERVENTION, "Intervention"),
-    # )
+    house_vote = models.OneToOneField(HouseVote, null=True, db_index=True, related_name="hansard_block")
+    previous = models.OneToOneField("self", null=True, blank=True, related_name="next", db_index=True)
+    category = models.PositiveSmallIntegerField(choices=(
+        (CATEGORY_COMMITTEE, "Committee"),
+        (CATEGORY_DIVISION, "Division"),
+        (CATEGORY_INTERVENTION, "Intervention"),
+        (CATEGORY_MEMBERLIST, "Member List"),
+        (CATEGORY_WRITTEN_QUESTION, "Written Question"),
+        (CATEGORY_WRITTEN_RESPONSE, "Written Response"),
+    ))
 
     class Meta:
-        unique_together = ("sitting", "index")
-        ordering = ("start_approx", "index")
+        unique_together = ("sitting", "number")
+        ordering = ("start_approx", "number")
 
     def __str__(self):
         return self.slug

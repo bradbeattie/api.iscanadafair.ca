@@ -1,5 +1,6 @@
 from federal_common.admin import CommonAdmin, HasLinks, HasNames
-from federal_common.sources import EN
+from django.utils.text import mark_safe
+from federal_common.sources import EN, FR
 from django.contrib import admin
 from proceedings import models
 
@@ -30,10 +31,16 @@ class RecordingAdmin(HasNames, HasLinks, CommonAdmin):
 
 
 class HansardBlockAdmin(HasNames, HasLinks, CommonAdmin):
-    list_display = ("slug", "sitting")
+    list_display = ("slug", "sitting", "get_category_display", "parliamentarian", "show_content_en", "show_content_fr")
     list_filter = ("sitting__session__parliament", )
     search_fields = ("slug", )
     raw_id_fields = ("sitting", )
+
+    def show_content_en(self, obj):
+        return mark_safe(obj.content.get(EN, None))
+
+    def show_content_fr(self, obj):
+        return mark_safe(obj.content.get(FR, None))
 
 
 class HouseVoteAdmin(HasLinks, CommonAdmin):

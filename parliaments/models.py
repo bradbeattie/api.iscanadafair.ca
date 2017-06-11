@@ -96,6 +96,7 @@ class Parliamentarian(NamesMixin, LinksMixin, models.Model):
     photo = models.ImageField(upload_to=get_photo_path)
     birthtext = models.CharField(max_length=10, db_index=True, help_text="Exact birth dates for parliamentarians in the 1800s sometimes omitted day or month")
     birthdate = models.DateField(null=True, db_index=True)
+    # TODO: Remove birthdate and rename birthtext to birthdate
     lop_item_code = models.SlugField(db_index=True, unique=True)
     constituency_offices = json.JSONField()
     hill_phone = models.CharField(max_length=20, db_index=True)
