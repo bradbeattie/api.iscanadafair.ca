@@ -38,7 +38,7 @@ NAME_WIKI = {EN: "Wikipedia", FR: "Wikipédia"}
 
 LANG_CANADIANA_CONTENT = {EN: "eng", FR: "fra"}
 LANG_CANADIANA_UI = LANG_LEGISINFO_XML = LANG_WIKI = LANG_PARLVU = {EN: "en", FR: "fr"}
-LANG_LOP = LANG_LEGISINFO_UI = {EN: "E", FR: "F"}
+LANG_LOP = LANG_LEGISINFO_UI = LANG_HOC_HANSARD_XML = {EN: "E", FR: "F"}
 LANG_EC = {EN: "e", FR: "f"}
 
 AVAILABILITY_WARNINGS = re.compile(r" \((Disponible en anglais seulement|Available in French only)\)")

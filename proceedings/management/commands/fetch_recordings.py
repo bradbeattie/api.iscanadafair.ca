@@ -4,7 +4,6 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Q
 from django.utils.text import slugify
-from django.utils.timezone import make_aware
 from federal_common import sources
 from federal_common.sources import EN, FR
 from federal_common.utils import fetch_url, dateparse, datetimeparse
@@ -23,7 +22,6 @@ locations = {}
 CACHE_BEFORE = timedelta(days=0 if settings.DEBUG else 90)
 ROOM = re.compile(r"(Room|Pièce) ([^,]+), (.*)")
 SUFFIX = re.compile(r"[ -]+$")
-TZ = pytz.timezone(settings.TIME_ZONE)
 HOUSE_PUBLICATIONS = "http://www.ourcommons.ca/documentviewer/en/house/latest-sitting"
 HOC_SITTING_NO = re.compile(r"^HoC Sitting No. (.*)$")
 HOC_QUESTION_PERIOD_NO = re.compile(r"^Question Period for HoC Sitting No. (.*)")
@@ -120,10 +118,10 @@ class Command(BaseCommand):
             event = {EN: event, FR: events[FR][event_id]}
             recording = models.Recording(
                 category=CATEGORY_MAPPING[event[EN]["ThumbnailUri"].rsplit("/", 1)[-1]],
-                scheduled_start=make_aware(datetimeparse(event[EN]["ScheduledStart"]), TZ),
-                scheduled_end=make_aware(datetimeparse(event[EN]["ScheduledEnd"]), TZ),
-                actual_start=make_aware(datetimeparse(event[EN]["ActualStart"]), TZ) if event[EN]["ActualStart"] else None,
-                actual_end=make_aware(datetimeparse(event[EN]["ActualEnd"]), TZ) if event[EN]["ActualEnd"] else None,
+                scheduled_start=datetimeparse(event[EN]["ScheduledStart"]),
+                scheduled_end=datetimeparse(event[EN]["ScheduledEnd"]),
+                actual_start=datetimeparse(event[EN]["ActualStart"]) if event[EN]["ActualStart"] else None,
+                actual_end=datetimeparse(event[EN]["ActualEnd"]) if event[EN]["ActualEnd"] else None,
                 status=STATUS_MAPPING[event[EN]["EntityStatusDesc"]],
                 slug="-".join((str(day), slugify(unidecode(event[EN]["Title"])))),
             )

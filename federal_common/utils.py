@@ -3,6 +3,7 @@ from datetime import timedelta
 from dateutil.parser import parse as dateutil_parse
 from django.conf import settings
 from django.utils.text import slugify
+from django.utils.timezone import make_aware
 from federal_common.sources import EN, FR
 from time import sleep
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse, urljoin, ParseResult
@@ -21,6 +22,7 @@ mc = memcache.Client(['127.0.0.1:11211'], debug=0)
 DASHER = re.compile(r"[/.:]")
 REVERSE_ORDINAL = re.compile("^([0-9]+)st|nd|rd|th$", re.I)
 THROTTLE = 1
+HTTP_RESPONSE_CODE_CACHE_DAYS = {404: 30}
 
 
 def one_or_none(l):
@@ -72,7 +74,7 @@ def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False, 
                 THROTTLE = (THROTTLE + 1) * 2
                 logger.warning(e, "(throttle {}s)".format(THROTTLE / (10 if settings.DEBUG else 1)))
         if response.status_code != 200:
-            mc.set(url_hash_cs, True, 86400 * 3)
+            mc.set(url_hash_cs, True, 86400 * HTTP_RESPONSE_CODE_CACHE_DAYS.get(response.status_code, 2))
             raise FetchFailure(url, response.status_code, response.content)
         content = response.content
         with open(filename, "w") as f:
@@ -106,7 +108,7 @@ def url_tweak(url, remove=None, update=None):
 
 
 def datetimeparse(s):
-    return dateutil_parse(s)
+    return make_aware(dateutil_parse(s))
 
 
 def dateparse(s):

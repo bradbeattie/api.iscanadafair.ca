@@ -32,9 +32,9 @@ class RecordingAdmin(HasNames, HasLinks, CommonAdmin):
 
 class HansardBlockAdmin(HasNames, HasLinks, CommonAdmin):
     list_display = ("slug", "sitting", "get_category_display", "parliamentarian", "show_content_en", "show_content_fr")
-    list_filter = ("sitting__session__parliament", )
+    list_filter = ("category", "sitting__session__parliament")
     search_fields = ("slug", )
-    raw_id_fields = ("sitting", )
+    raw_id_fields = ("sitting", "previous", "house_vote", "parliamentarian")
 
     def show_content_en(self, obj):
         return mark_safe(obj.content.get(EN, None))

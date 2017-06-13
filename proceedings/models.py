@@ -195,10 +195,13 @@ class HansardBlock(models.Model):
     CATEGORY_MEMBERLIST = 4
     CATEGORY_WRITTEN_QUESTION = 5
     CATEGORY_WRITTEN_RESPONSE = 6
+    CATEGORY_APPENDIX = 7
+    CATEGORY_INTRO = 9
+    CATEGORY_UNKNOWN = 8
 
     slug = models.SlugField(max_length=200, primary_key=True)
     sitting = models.ForeignKey(Sitting, db_index=True)
-    number = models.PositiveIntegerField(db_index=True)  # TODO: Rename to "number" to be consistent with other classes?
+    number = models.PositiveIntegerField(db_index=True)
     start_approx = models.DateTimeField(db_index=True)
     metadata = json.JSONField()
     content = json.JSONField()
@@ -212,6 +215,9 @@ class HansardBlock(models.Model):
         (CATEGORY_MEMBERLIST, "Member List"),
         (CATEGORY_WRITTEN_QUESTION, "Written Question"),
         (CATEGORY_WRITTEN_RESPONSE, "Written Response"),
+        (CATEGORY_APPENDIX, "Appendix"),
+        (CATEGORY_INTRO, "Intro"),
+        (CATEGORY_UNKNOWN, "UNKNOWN!"),
     ))
 
     class Meta:
