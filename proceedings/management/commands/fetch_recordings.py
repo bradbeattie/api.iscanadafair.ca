@@ -13,7 +13,6 @@ from tqdm import tqdm
 from unidecode import unidecode
 import json
 import logging
-import pytz
 import re
 
 

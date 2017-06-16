@@ -70,20 +70,23 @@ class Command(BaseCommand):
                     sitting_url,
                     use_cache=(session.parliament.number, int(NUMBERS.search(sitting.number).groups()[0])) < (42, 180),
                 ), "html.parser")
+                if lang == EN:
+                    sitting.date = dateparse(soup.select("#load-publication-selector")[0].text)
                 for tab in soup.select(".publication-tabs > li"):
                     if "disabled" not in tab["class"]:
                         sitting.links[lang][", ".join((sources.NAME_HOC[lang], tab.a.text))] = urljoin(
                             sitting_url,
                             tab.a.attrs.get("href", sitting_url)
                         )
-                if lang == EN:
-                    sitting.date = dateparse(soup.select("#load-publication-selector")[0].text)
-                    sitting_url = get_french_parl_url(sitting_url, soup)
+                        if lang == EN and "Hansard" in tab.a.text:
+                            sitting.links[EN][sources.NAME_OP[EN]] = f"https://openparliament.ca/debates/{sitting.date.year}/{sitting.date.month}/{sitting.date.day}/"
                 xml_button = one_or_none(soup.select(".btn-export-xml"))
                 if xml_button:
                     xml_url = urljoin(sitting_url, xml_button.attrs["href"])
                     sitting.links[lang][sources.NAME_HOC_HANSARD_XML[lang]] = xml_url
                     fetch_url(xml_url, discard_content=True)
+                if lang == EN:
+                    sitting_url = get_french_parl_url(sitting_url, soup)
             sitting.save()
         except Exception as e:
             logger.exception(e)

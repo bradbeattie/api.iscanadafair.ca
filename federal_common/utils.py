@@ -13,6 +13,7 @@ import logging
 import math
 import memcache
 import os
+import random
 import re
 import requests
 
@@ -56,7 +57,7 @@ def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False, 
             url_hash[0:8],
         )),
     )
-    if not os.path.exists(filename) or not use_cache and not settings.DEBUG:
+    if not os.path.exists(filename) or not use_cache and not settings.DEBUG or random.uniform(0, 1) < 0.05:
         if mc.get(url_hash_cs):
             logger.warning("Fetch suppressed due to recent failure: {}".format(url))
             raise FetchSuppressed(url)

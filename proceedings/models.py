@@ -221,6 +221,7 @@ class HansardBlock(models.Model):
     ))
 
     class Meta:
+        index_together = ("start_approx", "number")
         unique_together = ("sitting", "number")
         ordering = ("start_approx", "number")
 

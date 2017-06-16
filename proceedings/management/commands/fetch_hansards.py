@@ -19,25 +19,6 @@ import re
 logger = logging.getLogger(__name__)
 
 
-# Sittings with identified issues
-KNOWN_ISSUES = (
-    "39-2-75",   # FR: SubjectOfBusiness 2408815 missing qualifier, has ProceduralText in its place
-    "40-2-85",   # FR: SubjectOfBusinessQualifier missing in SubjectOfBusiness 2870025
-    "40-2-86",   # FR: Timestamp missing from SubjectOfBusiness 2870249
-    "40-3-113",  # EN: Questioner just before ParaText 2235455 is missing Affiliation
-    "40-3-120",  # EN: Responder missing after ParaText 2289451
-    "40-3-149",  # FR: SubjectOfBusiness 3828366 missing SubjectOfBusinessQualifier
-    "40-3-67",   # FR: SubjectOfBusiness 3275652 missing SubjectOfBusinessQualifier
-    "40-3-89",   # FR: SubjectOfBusiness 3435036 missing SubjectOfBusinessContent
-    "41-1-15",   # EN: Responder missing after ParaText 2469467
-    "41-1-23",   # FR: SubjectOfBusinessQualifer missing in SubjectOfBusiness 4307039
-    "41-2-233",  # FR: SubjectOfBusinessTitle missing in SubjectOfBusiness 8754777
-    "41-1-269",  # EN: SubjectOfBusiness 8079738 missing SubjectOfBusinessQualifier
-    "41-2-68",   # FR: Missing a FloorLanguage tag
-    "41-2-120",  # EN: Missing a FloorLanguage tag
-)
-
-
 # Tags where the subtree structures may differ between French and English (sometimes erroneously)
 CONTENT_MAY_DIFFER = (
 
@@ -76,6 +57,7 @@ TAGS_THAT_OPEN_WITH_HANSARD_BLOCKS = {
     "Questioner": models.HansardBlock.CATEGORY_WRITTEN_QUESTION,
     "Responder": models.HansardBlock.CATEGORY_WRITTEN_QUESTION,
 
+    "SubjectOfBusiness": models.HansardBlock.CATEGORY_UNKNOWN,
     "SubjectOfBusinessContent": models.HansardBlock.CATEGORY_UNKNOWN,
     "WrittenQuestionResponse": models.HansardBlock.CATEGORY_UNKNOWN,
 }
@@ -109,14 +91,33 @@ METADATA_TAGS = {
     "QuestionID",
     "SubjectOfBusinessQualifier",
     "SubjectOfBusinessTitle",
-    "ProceduralText",
-    "Title",
     "Total",
+    "Title",
     "Type",
 }
+TAGS_THAT_KEEP_METADATA_ON_CLOSING = {
+}
+SUBJECTOFBUSINESS_METADATA = set([
+    "OrderOfBusiness-OrderOfBusinessTitle",
+    "OrderOfBusiness-CatchLine",
+    "OrderOfBusiness-OrderOfBusinessTitle",
+    "SubjectOfBusiness-CatchLine",
+    "SubjectOfBusiness-SubjectOfBusinessQualifier",
+    "SubjectOfBusiness-SubjectOfBusinessTitle",
+])
+EXPECTED_METADATA = {
+    "Intervention opening": SUBJECTOFBUSINESS_METADATA,
+    "Intervention closing": SUBJECTOFBUSINESS_METADATA | set(["Appendix-AppendixTitle", "Appendix-AppendixLabel"]),
+    "Division closing": SUBJECTOFBUSINESS_METADATA | set(["Division-DivisionNumber"]),
+    "QuestionContent closing": SUBJECTOFBUSINESS_METADATA | set(["WrittenQuestionResponse-QuestionID"]),
+    "ResponseContent closing": SUBJECTOFBUSINESS_METADATA | set(["WrittenQuestionResponse-QuestionID"]),
+    "MemberList closing": set(["MemberLists-MemberListsLabel", "MemberList-LabelLine", "MemberList-Note", "MemberLists-MemberListsTitle"]),
+    "SubjectOfBusinessContent closing": SUBJECTOFBUSINESS_METADATA,
+}
 STRIPPED_TAGS = {
-    "ForceColumnBreak",
     "Corrigendum",
+    "Date",
+    "ForceColumnBreak",
     "colspec",
 }
 
@@ -144,6 +145,7 @@ HTML_MAPPING = {
     "MotionBody": TagMapping("div", ""),
     "ParaText": TagMapping("p", ""),
     "Party": TagMapping("span", ""),
+    "ProceduralText": TagMapping("p", ""),
     "PersonSpeaking": TagMapping("h3", ""),
     "Responder": TagMapping("span", ""),
     "Questioner": TagMapping("span", ""),
@@ -181,13 +183,18 @@ SPEAKER_FORMATS = [
     re.compile(r"^{} (?P<name>[^()]*)(?P<suffix> .*)?$".format(HONORIFICS)),
     re.compile(r"^(The Acting Speaker|The Presiding Officer|The Assistant Deputy Speaker) \({} (?P<name>[^()]*)\)$".format(HONORIFICS)),
 ]
-MAPPED_PARLIAMENTARIANS_BY_NAME = {
+for alias, slug in {
+    "113993": "anderson-david-2",
+    "2070": "blaikie-william-alexander-bill",
     "Candice Hoeppner": "bergen-candice",
+    "Chief Patrick Brazeau (National Chief of the Congress of Aboriginal Peoples)": "brazeau-patrick",
     "Daniel Hays": "hays-daniel",
     "David Chatters": "chatters-david-cameron",
     "Francis Valeriote": "valeriote-frank",
     "George Furey": "furey-george-j",
     "Harold Glenn Albrecht": "albrecht-harold",
+    "Hon. David Anderson (Minister of the Environment, Lib.)": "anderson-david-1",
+    "Hon. David Anderson (Victoria, Lib.)": "anderson-david-1",
     "Jean-Guy Carignan": "carignan-jean-guy",
     "Jeffrey Watson": "watson-jeff",
     "John Cummins": "cummins-john-martin",
@@ -196,19 +203,6 @@ MAPPED_PARLIAMENTARIANS_BY_NAME = {
     "Khristinn Kellie Leitch": "leitch-k-kellie",
     "Mervin Tweed": "tweed-mervin-c",
     "Michael Savage": "savage-michael-john",
-    "Norman Doyle": "doyle-norman-e",
-    "Noël A. Kinsella": "kinsella-noel-a",
-    "Noël Kinsella": "kinsella-noel-a",
-    "Rey Pagtakhan": "pagtakhan-rey-d",
-    "Richard Harris": "harris-richard-m",
-    "Robert Clarke": "clarke-bob",
-    "Robert Nault": "nault-robert-daniel",
-    "Roy Bailey": "bailey-roy-h",
-}
-MAPPED_PARLIAMENTARIANS_BY_TITLE = {
-    "Chief Patrick Brazeau (National Chief of the Congress of Aboriginal Peoples)": "brazeau-patrick",
-    "Hon. David Anderson (Minister of the Environment, Lib.)": "anderson-david-1",
-    "Hon. David Anderson (Victoria, Lib.)": "anderson-david-1",
     "Mr. André Bachand (Richmond—Arthabaska, PC)": "bachand-andre-2",
     "Mr. David Anderson (Cypress Hills—Grasslands, CPC)": "anderson-david-2",
     "Mr. David Anderson (Parliamentary Secretary (for the Canadian Wheat Board) to the Minister of Agriculture and Agri-Food and Minister for the Canadian Wheat Board, CPC)": "anderson-david-2",
@@ -221,12 +215,25 @@ MAPPED_PARLIAMENTARIANS_BY_TITLE = {
     "Mr. Mario Beaulieu (La Pointe-de-l'Île, BQ)": "beaulieu-mario-2",
     "Mr. Martin (Winnipeg Centre)": "martin-pat",
     "Mr. Milliken": "milliken-peter-andrew-stewart",
+    "Mr. Rota": "rota-anthony",
+    "Mr. William Blair (Parliamentary Secretary to the Minister of Justice and Attorney General of Canada, Lib.)": "blair-bill",
     "Ms. Catterall": "catterall-marlene",
+    "Norman Doyle": "doyle-norman-e",
+    "Noël A. Kinsella": "kinsella-noel-a",
+    "Noël Kinsella": "kinsella-noel-a",
+    "Rey Pagtakhan": "pagtakhan-rey-d",
+    "Richard Harris": "harris-richard-m",
+    "Robert Clarke": "clarke-rob",
+    "Robert Nault": "nault-robert-daniel",
+    "Roy Bailey": "bailey-roy-h",
     "The Acting Speaker (Mr. Bélair)": "belair-reginald",
     "The Acting Speaker (Mr. Proulx)": "proulx-marcel",
     "The Acting Speaker (Ms. Bakopanos)": "bakopanos-eleni",
-}
+    "The Assistant Deputy Chair (Mr. Anthony Rota)": "rota-anthony",
+}.items():
+    CACHED_PARLIAMENTARIANS[alias].add(Parliamentarian.objects.get(slug=slug))
 UNMAPPED_NAMES = {
+    "Chief Phil Fontaine (National Chief of the Assembly of First Nations)",
     "H. E. Vicente Fox Quesada (President of the United Mexican States)",
     "H.E. Felipe Calderón Hinojosa (President of the United Mexican States)",
     "H.E. Mr. François Hollande (President of the French Republic)",
@@ -237,6 +244,7 @@ UNMAPPED_NAMES = {
     "Hon. John Howard (Prime Minister of Australia)",
     "Le Président",
     "Le vice-président",
+    "Mr. Barack Obama (President of the United States of America)",
     "Mr. Barclay D. Howden (Director General, Directorate of Nuclear Cycle and Facilities Regulation)",
     "Mr. Barclay D. Howden",
     "Mr. Brian McGee (Senior Vice President and Chief Nuclear Officer)",
@@ -244,15 +252,18 @@ UNMAPPED_NAMES = {
     "Mr. Clem Chartier (President of the Métis National Council)",
     "Mr. Daniel Meneley (Former Chief Engineer of AECL)",
     "Mr. Daniel Meneley",
-    "Ms. Beverley Jacobs (President of the Native Women’s Association of Canada)",
-    "Ms. Mary Simon (President Inuit Tapiriit Kanatami)",
-    "Chief Phil Fontaine (National Chief of the Assembly of First Nations)",
     "Mr. David F. Torgerson (Executive Vice President and Chief Technology Officer and President for the Research and Technology Division AECL)",
     "Mr. David F. Torgerson",
     "Mr. Robert Strickert (Former manager of Pickering and Site VP of Darlington)",
+    "Ms. Beverley Jacobs (President of the Native Women’s Association of Canada)",
     "Ms. Linda J. Keen (President and Chief Executive Officer, Canadian Nuclear Safety Commission)",
     "Ms. Linda J. Keen",
+    "Ms. Linda Keen",
+    "Ms. Malala Yousafzai (Co-Founder of Malala Fund)",
+    "Ms. Mary Simon (President Inuit Tapiriit Kanatami)",
+    "Ms. Mary Simon",
     "Right Hon. David Cameron (Prime Minister of the United Kingdom of Great Britain and Northern Ireland)",
+    "The Acting Clerk of the House",
     "The Acting Speaker",
     "The Assistant Deputy Chair",
     "The Assistant Deputy Chairman",
@@ -265,99 +276,8 @@ UNMAPPED_NAMES = {
 }
 
 
-# Expected XML structure
-RICH_TEXT = "({})*".format("|".join(map(lambda x: f"{{{x}}}", (
-    "Affiliation",
-    "B",
-    "CommitteeQuote",
-    "Document",
-    "I",
-    "Insertion",
-    "LegislationQuote",
-    "Poetry",
-    "Query",
-    "Quote",
-    "Sub",
-    "Sup",
-))))
-IDENTITY_TEXT = "{Affiliation}({Affiliation})?"
-TITLE_TEXT = "({Sup}|{I}|{B}|{Query})*"
-LINE_TEXT = "({Line})+"
-PATTERN_STRUCTURE = {
-    "Affiliation": "({Role}|{Name}|{Constituency}|{Province}|{Party})*",
-    "AffiliationGroup": "{title}{Total}({Affiliation})+",
-    "Appendix": "{AppendixLabel}({AppendixTitle})?{AppendixContent}",
-    "AppendixContent": "({ParaText}|{Intervention})+",
-    "AppendixTitle": LINE_TEXT,
-    "B": TITLE_TEXT,
-    "CatchLine": TITLE_TEXT,
-    "Committee": "{title}({CommitteeMemberGroup})+",
-    "CommitteeGroup": "{title}({Committee})+",
-    "CommitteeMemberGroup": "({title})?({Representing})?({Affiliation})+({Total})?",
-    "CommitteeQuote": "{QuotePara}",
-    "Content": "({ParaText}|{Motion})+",
-    "Division": "{DivisionNumber}({DivisionType})+",
-    "DivisionNumber": TITLE_TEXT,
-    "DivisionType": "{Type}({Title})?(({Affiliation})+|{Nil})({Total})?",
-    "Document": TITLE_TEXT,
-    "DocumentTitle": "{DocumentName}",
-    "ExtractedInformation": "({ExtractedItem})+",
-    "ExtractedItem": TITLE_TEXT,
-    "FloorLanguage": "{I}",
-    "Hansard": "{StartPageNumber}{DocumentTitle}{ExtractedInformation}({Corrigendum})?{HansardBody}({MemberLists})?",
-    "HansardBody": "({Intro})?({OrderOfBusiness})*({Appendix})*",
-    "I": TITLE_TEXT,
-    "Insertion": TITLE_TEXT,
-    "Intervention": "({PersonSpeaking})?({Content})?",
-    "Intro": "{ParaText}({Prayer})?({Intervention})*({SubjectOfBusiness})*",
-    "LabelLine": "{Name}{Constituency}({Province})?{Party}",
-    "LegislationQuote": "{QuotePara}",
-    "Line": TITLE_TEXT,
-    "MemberList": "{title}({Subtitle})?({LabelLine})?({Affiliation}|{AffiliationGroup}|{Committee}|{CommitteeGroup})*({Note})?",
-    "MemberLists": "{MemberListsLabel}{MemberListsTitle}({MemberList})+",
-    "MemberListsTitle": LINE_TEXT,
-    "Motion": "{MotionBody}",
-    "MotionBody": "({ParaText})+",
-    "OrderOfBusiness": "({OrderOfBusinessTitle})?({CatchLine})?({SubjectOfBusiness})+",
-    "OrderOfBusinessTitle": TITLE_TEXT,
-    "ParaText": RICH_TEXT,
-    "PersonSpeaking": IDENTITY_TEXT,
-    "Poetry": "({Verse}|{Line})+",
-    "ProceduralText": TITLE_TEXT,
-    "QuestionContent": "({ParaText})+",
-    "QuestionID": TITLE_TEXT,
-    "Questioner": IDENTITY_TEXT,
-    "Quote": "({QuotePara})+",
-    "QuotePara": RICH_TEXT,
-    "Representing": LINE_TEXT,
-    "Responder": IDENTITY_TEXT,
-    "ResponseContent": "({ParaText}|{table})+",
-    "Sub": TITLE_TEXT,
-    "SubjectOfBusiness": "({SubjectOfBusinessTitle})?({SubjectOfBusinessQualifier})?({CatchLine})?({SubjectOfBusinessContent})?",
-    "SubjectOfBusinessContent": "({Intervention}|{Division}|{WrittenQuestionResponse}|{ParaText}|{ThroneSpeech})*",
-    "SubjectOfBusinessQualifier": TITLE_TEXT,
-    "SubjectOfBusinessTitle": TITLE_TEXT,
-    "Subtitle": TITLE_TEXT,
-    "Sup": TITLE_TEXT,
-    "ThroneSpeech": "{ThroneSpeechPara}",
-    "ThroneSpeechPara": LINE_TEXT,
-    "Verse": LINE_TEXT,
-    "WrittenQuestionResponse": "({QuestionID})?({Questioner})?{QuestionContent}({Responder})?({ResponseContent})?",
-    "row": "({entry})+",
-    "table": "({title})?{tgroup}",
-    "tbody": "({row})+",
-    "tgroup": "{tbody}",
-}
-COMPILED_STRUCTURE = {
-    k: re.compile(f"^{v}$")
-    for k, v in PATTERN_STRUCTURE.items()
-}
-LEAF = re.compile("^$")
-
-
 # Other constants
 PARSED = "element-already-parsed"
-SAID_PREFIX = re.compile(r"^(He|She) said: ")  # TODO: USE THIS
 
 
 class Command(BaseCommand):
@@ -370,12 +290,14 @@ class Command(BaseCommand):
             logger.setLevel(logging.DEBUG)
 
         for sitting in tqdm(
-            models.Sitting.objects.filter(links__contains=sources.NAME_HOC_HANSARD_XML[EN], slug="40-3-113"),
+            models.Sitting.objects.filter(links__contains=sources.NAME_HOC_HANSARD_XML[EN]),
             desc="Fetch Hansards, HoC",
             unit="sitting",
         ):
             try:
                 self.fetch_hansard(sitting)
+                print()
+                print(sitting, sitting.links[EN][sources.NAME_HOC_HANSARD_XML[EN]])
             except:
                 print()
                 print(sitting, sitting.links[EN][sources.NAME_HOC_HANSARD_XML[EN]])
@@ -392,9 +314,11 @@ class Command(BaseCommand):
             for lang in (EN, FR)
         }
 
-        # Strip out empty elements
+        # Strip out incorrect elements
         for lang in (EN, FR):
             strip_empty_elements(self.tree[lang].getroot())
+            for duplicate in self.tree[lang].xpath("//PersonSpeaking/Affiliation[2]"):
+                duplicate.getparent().remove(duplicate)
 
         # If the structure checks out, parse down from the root
         self.floor_language = None
@@ -431,7 +355,7 @@ class Command(BaseCommand):
         #
         is_boundary_tag = element.tag in TAGS_THAT_OPEN_WITH_HANSARD_BLOCKS
         if is_boundary_tag:
-            self.save_hansard_block(f"boundary tag opening: {element.tag}")
+            self.save_hansard_block(f"{element.tag} opening")
             self.hansard_block.category = TAGS_THAT_OPEN_WITH_HANSARD_BLOCKS[element.tag]
 
         # Custom element openings
@@ -469,8 +393,7 @@ class Command(BaseCommand):
             return {}
         elif element.tag in TAGS_THAT_CLOSE_WITH_HANSARD_BLOCKS:
             assert not any(content for lang, content in child_responses.items()), "Unparsed content for boundary tag?"
-            self.save_hansard_block(f"boundary tag closing: {element.tag}")
-            return {}
+            self.save_hansard_block(f"{element.tag} closing")
         elif element.tag in HTML_MAPPING:
             response = {
                 lang: "".join((
@@ -489,9 +412,15 @@ class Command(BaseCommand):
             return response
         else:
             raise Exception(f"UNEXPECTED TAG (not boundary or html): {element.tag}")
+        if element.tag not in TAGS_THAT_KEEP_METADATA_ON_CLOSING:
+            self.clear_metadata(element.tag)
+        return {}
 
-    def get_french_element(self, el_en):
-        return one_or_none(self.tree[FR].xpath(self.tree[EN].getpath(el_en)))
+    def get_french_element(self, el_en, by_attrib=None):
+        if by_attrib:
+            return one_or_none(self.tree[FR].xpath(f"//{el_en.tag}[@{by_attrib} = '{el_en.attrib[by_attrib]}']"))
+        else:
+            return one_or_none(self.tree[FR].xpath(self.tree[EN].getpath(el_en)))
 
     def parse_children(self, element, selected_lang, is_boundary_tag=False):
         response = defaultdict(list)
@@ -527,10 +456,14 @@ class Command(BaseCommand):
                 for lang, content in self.hansard_block.content.items()
             }
             self.hansard_block.metadata = {
-                "".join(k): v
+                "-".join(k): v
                 for k, v in self.metadata.items()
             }
+            unexpected_metadata = set(self.hansard_block.metadata.keys()) - EXPECTED_METADATA.get(reason, set())
+            if unexpected_metadata:
+                print(reason, unexpected_metadata)
             self.hansard_block.metadata["reason"] = reason
+            self.hansard_block.metadata["person_speaking"] = self.person_speaking
             self.hansard_block.save()
 
             self.previous_hansard_block = self.hansard_block
@@ -543,11 +476,11 @@ class Command(BaseCommand):
         for lang, content in self.hansard_block.content.items():
             assert not content, "Stray content? {}".format(content)
 
-    def clear_metadata(self, element):
+    def clear_metadata(self, *tags):
         self.metadata = {
             k: v
             for k, v in self.metadata.items()
-            if k[0] != element.tag
+            if k[0] not in tags
         }
 
     def parse_text_node(self, element, lang):
@@ -599,15 +532,22 @@ class Command(BaseCommand):
 
     def personspeaking_open(self, element, lang):
         assert not self.person_speaking and not self.parliamentarian, "Person speaking opened, but wasn't flushed"
-        affiliation = element.xpath("Affiliation")
-        print("AFFILIATION?", lang, element.attrib, element.getparent().attrib, element.getparent().getparent().attrib)
+        affiliation = element.find("Affiliation")
+        if affiliation is None:
+            return
         try:
             self.person_speaking = normalize_whitespace({
-                EN: affiliation[0].text or element.getparent().attrib["ToCText"],
-                FR: self.get_french_element(element).xpath("Affiliation")[0].text or self.get_french_element(element.getparent()).attrib["ToCText"],
+                EN: affiliation.text,
+                FR: self.get_french_element(element).xpath("Affiliation")[0].text,
             }, strip=True)
-        except IndexError:
-            return
+        except:
+            pass
+        if not self.person_speaking or not self.person_speaking[EN]:
+            self.person_speaking = normalize_whitespace({
+                EN: element.getparent().attrib["ToCText"],
+                FR: self.get_french_element(element.getparent(), by_attrib="id").attrib["ToCText"],
+            }, strip=True)
+
         if self.person_speaking[EN] not in UNMAPPED_NAMES:
             try:
                 self.parliamentarian = get_cached_obj(
@@ -616,32 +556,23 @@ class Command(BaseCommand):
                 )
             except:
                 try:
-                    self.parliamentarian = get_cached_obj(
-                        CACHED_PARLIAMENTARIANS,
-                        MAPPED_PARLIAMENTARIANS_BY_TITLE[self.person_speaking[EN]]
-                    )
-                except KeyError:
+                    self.parliamentarian = get_cached_obj(CACHED_PARLIAMENTARIANS, self.person_speaking[EN])
+                except AssertionError:
                     for speaker_format in SPEAKER_FORMATS:
                         match = speaker_format.search(self.person_speaking[EN])
                         if match:
                             try:
-                                name = normalize_whitespace(match.groupdict()["name"], strip=True)
                                 self.parliamentarian = get_cached_obj(
                                     CACHED_PARLIAMENTARIANS,
-                                    MAPPED_PARLIAMENTARIANS_BY_NAME.get(name, name),
+                                    normalize_whitespace(match.groupdict()["name"], strip=True),
                                 )
                             except AssertionError:
-                                print("UNMATCHED SPEAKER", self.sitting, [self.person_speaking[EN], match.groupdict()["name"].strip()])
+                                print("UNMATCHED SPEAKER", self.sitting, affiliation.attrib, [self.person_speaking[EN], match.groupdict()["name"].strip()], element.getparent().attrib)
                             break
                     else:
-                        print("SPEAKER FORMAT MISMATCH", self.sitting, [self.person_speaking[EN]])
+                        print("SPEAKER FORMAT MISMATCH", self.sitting, [self.person_speaking[EN]], element.getparent().attrib)
                 if self.parliamentarian:
-                    try:
-                        CACHED_PARLIAMENTARIANS[affiliation.attrib["DbId"]].add(
-                            self.parliamentarian
-                        )
-                    except:
-                        pass
+                    CACHED_PARLIAMENTARIANS[affiliation.attrib["DbId"]].add(self.parliamentarian)
 
     def questioner_open(self, *args):
         return self.personspeaking_open(*args)
@@ -655,9 +586,8 @@ class Command(BaseCommand):
     # Closing handlers
     # ------------------------------------------------------------------------
 
-    def intervention_close(self, element, lang, child_responses):
-        self.intervention_type = None
-        self.person_speaking = None
+    def writtenquestionresponse_close(self, *args):
+        self.clear_metadata("WrittenQuestion", "WrittenResponse")
 
     def questioncontent_close(self, element, lang, child_responses):
         for lang, content in child_responses.items():
@@ -670,11 +600,12 @@ class Command(BaseCommand):
     def divisiontype_close(self, element, lang, child_responses):
         for lang, content in child_responses.items():
             self.hansard_block.content[lang].append("".join((
-                "<span class='title'>{}</span".format(self.metadata.pop(('DivisionType', 'Title'), {}).get(lang, "")),
-                "<span class='type'>{}</span".format(self.metadata.pop(('DivisionType', 'Type'), {}).get(lang, "")),
-                "<ul>{}</ul>".format("".join(f"<li>{c}</li>" for c in content)),
-                "<span class='total'>{}</span".format(self.metadata.pop(('DivisionType', 'Total'), {}).get(lang, "")),
+                """<span class="title">{}</span>""".format(self.metadata.get(("DivisionType", "Title"), {}).get(lang, "")),
+                """<span class="type">{}</span>""".format(self.metadata.get(("DivisionType", "Type"), {}).get(lang, "")),
+                """<ul>{}</ul>""".format("".join(f"<li>{c}</li>" for c in content)),
+                """<span class="total">{}</span""".format(self.metadata.get(("DivisionType", "Total"), {}).get(lang, "")),
             )))
+        self.clear_metadata("DivisionType")
 
 
 def normalize_whitespace(content, strip):
@@ -700,38 +631,5 @@ def strip_empty_elements(element):
     elif element.tag in STRIPPED_TAGS:
         element.getparent().remove(element)
     elif not len(element):
-        pass
-        #if (element.text is None or not element.text.strip()) and element.tag != "Affiliation":
-        #    element.getparent().remove(element)
-
-
-Structure = namedtuple("Structure", ("tag", "id", "children"))
-def get_child_structure(element, include_text_nodes=False, depth=1):
-    if isinstance(element, _ElementUnicodeResult):
-        return Structure("TEXT", None, []) if element.strip() else None
-    elif not depth:
-        return Structure(element.tag, element.attrib.get("id", None), [])
-    elif include_text_nodes:
-        return Structure(
-            element.tag,
-            element.attrib.get("id", None),
-            list(filter(None, [
-                get_child_structure(child, include_text_nodes=include_text_nodes, depth=depth - 1)
-                for child in element.xpath("child::node()")
-            ])),
-        )
-    else:
-        return Structure(
-            element.tag,
-            element.attrib.get("id", None),
-            [
-                get_child_structure(child, include_text_nodes=include_text_nodes, depth=depth - 1)
-                for child in element
-            ],
-        )
-
-
-def assert_child_structure(element):
-    child_structure = "".join(map(lambda x: f"{{{x}}}", get_child_structure(element)))
-    expected = COMPILED_STRUCTURE.get(element.tag, LEAF)
-    assert expected.search(child_structure), f"{element.tag} expected {expected} but got {child_structure}"
+        if (element.text is None or not element.text.strip()) and element.tag != "Affiliation":
+            element.getparent().remove(element)
