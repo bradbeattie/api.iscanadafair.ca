@@ -529,6 +529,13 @@ class Command(BaseCommand):
     def orderofbusiness_open(self, element, lang):
         self.metadata[(element.tag, "Rubric")] = element.attrib["Rubric"]
 
+    def paratext_open(self, element, lang):
+        quotes = element.xpath("Quote")
+        if quotes:
+            assert len(quotes) == 1
+            assert quotes[0].tail is None
+            return self.parse_element(quotes[0], lang)
+
     def startpagenumber_open(self, element, lang):
         return {}
 
@@ -663,7 +670,6 @@ def merge_adjacent_quotes(element):
             not left.text,
             not right.text,
         )):
-            print("MERGING", left, left.attrib, right, right.attrib)
             for child in reversed(left):
                 right.insert(0, child)
             left.getparent().remove(left)
