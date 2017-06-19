@@ -291,7 +291,7 @@ class Command(BaseCommand):
             logger.setLevel(logging.DEBUG)
 
         for sitting in tqdm(
-            models.Sitting.objects.filter(links__contains=sources.NAME_HOC_HANSARD_XML[EN], slug="37-1-174"),
+            models.Sitting.objects.filter(links__contains=sources.NAME_HOC_HANSARD_XML[EN]),
             desc="Fetch Hansards, HoC",
             unit="sitting",
         ):
