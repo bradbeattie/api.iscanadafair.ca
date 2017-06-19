@@ -31,7 +31,7 @@ class Command(BaseCommand):
             logger.setLevel(logging.DEBUG)
 
         cached_parties = get_cached_dict(models.Party.objects.all())
-        list_url = "http://www.lop.parl.gc.ca/parlinfo/Lists/Party.aspx"
+        list_url = "https://lop.parl.ca/parlinfo/Lists/Party.aspx"
         for lang in (EN, FR):
             for a in tqdm(
                 BeautifulSoup(

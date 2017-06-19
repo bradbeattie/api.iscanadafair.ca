@@ -57,11 +57,15 @@ def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False, 
             url_hash[0:8],
         )),
     )
-    if not os.path.exists(filename) or not use_cache and not settings.DEBUG or random.uniform(0, 1) < 0.05:
+
+    if any((
+        not os.path.exists(filename),
+        not use_cache,
+        random.uniform(0, 1) > 0.999,
+    )):
         if mc.get(url_hash_cs):
             logger.warning("Fetch suppressed due to recent failure: {}".format(url))
             raise FetchSuppressed(url)
-        logger.info("Fetching {} (throttle {}s)".format(url, THROTTLE / (10 if settings.DEBUG else 1)))
         while True:
             try:
                 sleep(THROTTLE / 4)
@@ -70,23 +74,26 @@ def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False, 
                     "From": settings.ADMINS[0][1],
                     "User-Agent": "https://github.com/bradbeattie/canadian-parlimentarty-data",
                 })
-                break
+                if response.status_code in (200, 500):
+                    break
+                logger.warning(f"Fetch returned status {response.status_code}")
             except requests.exceptions.ConnectionError as e:
-                THROTTLE = (THROTTLE + 1) * 2
-                logger.warning(e, "(throttle {}s)".format(THROTTLE / (10 if settings.DEBUG else 1)))
+                logger.warning(e)
+            THROTTLE = (THROTTLE + 1) * 2
+            logger.warning("Refetching {} (throttle {}s)".format(url, THROTTLE / (10 if settings.DEBUG else 1)))
         if response.status_code != 200:
             mc.set(url_hash_cs, True, 86400 * HTTP_RESPONSE_CODE_CACHE_DAYS.get(response.status_code, 2))
             raise FetchFailure(url, response.status_code, response.content)
-        content = response.content
-        with open(filename, "w") as f:
-            try:
-                f.write(content.decode("utf8"))
-            except UnicodeDecodeError:
-                f.write(content.decode("latin1"))
+        try:
+            content = response.content.decode("utf8")
+        except UnicodeDecodeError:
+            content = response.content.decode("latin1")
+        open(filename, "w").write(content)
+    elif discard_content:
+        return
     else:
-        content = None if discard_content else open(filename).read()
-        if settings.DEBUG:
-            os.utime(filename)
+        content = open(filename).read()
+    content = content.replace("""<?xml version="1.0" encoding="UTF-8"?>""", "").strip()
     return content
 
 

@@ -38,7 +38,7 @@ class Command(BaseCommand):
         cached_committees = get_cached_dict(models.Committee.objects.filter(session=session))
 
         url = "http://www.parl.ca/LegisInfo/Home.aspx?download=xml&ParliamentSession={}-{}".format(session.parliament.number, session.number)
-        soup = BeautifulSoup(fetch_url(url, use_cache=session.parliament.number >= 42), "lxml")
+        soup = BeautifulSoup(fetch_url(url, use_cache=session.parliament.number < 42), "lxml")
         for bill_soup in tqdm(
             soup.find_all("bill"),
             desc=str(session),

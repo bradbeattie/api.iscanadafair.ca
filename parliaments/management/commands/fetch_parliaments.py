@@ -24,7 +24,7 @@ class Command(BaseCommand):
         self.fetch_parliaments()
 
     def fetch_parliaments(self):
-        url = "http://www.lop.parl.gc.ca/parlinfo/Lists/Parliament.aspx"
+        url = "https://lop.parl.ca/parlinfo/Lists/Parliament.aspx"
         for link in tqdm(
             BeautifulSoup(
                 fetch_url(url),

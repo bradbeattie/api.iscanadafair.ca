@@ -68,7 +68,7 @@ class Command(BaseCommand):
             for lang in (EN, FR):
                 soup = BeautifulSoup(fetch_url(
                     sitting_url,
-                    use_cache=(session.parliament.number, int(NUMBERS.search(sitting.number).groups()[0])) < (42, 180),
+                    use_cache=(session.parliament.number, int(NUMBERS.search(sitting.number).groups()[0])) < (42, 190),
                 ), "html.parser")
                 if lang == EN:
                     sitting.date = dateparse(soup.select("#load-publication-selector")[0].text)

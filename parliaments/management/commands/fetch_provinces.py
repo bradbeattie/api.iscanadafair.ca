@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
 
-    ROOT_URL = "http://www.lop.parl.gc.ca/ParlInfo/Compilations/ProvinceTerritory.aspx"
+    ROOT_URL = "https://lop.parl.ca/ParlInfo/Compilations/ProvinceTerritory.aspx"
 
     @transaction.atomic
     def handle(self, *args, **options):

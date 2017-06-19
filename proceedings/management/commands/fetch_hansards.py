@@ -1,4 +1,5 @@
 from collections import namedtuple, defaultdict
+from copy import copy
 from django.utils.timezone import make_aware
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
@@ -48,35 +49,26 @@ CONTENT_MAY_DIFFER = (
 
 
 # Tags that automatically save and clear the hansard block cache upon entering and exiting during a depth-first-search
-TAGS_THAT_OPEN_WITH_HANSARD_BLOCKS = {
-    "Appendix": models.HansardBlock.CATEGORY_APPENDIX,
-    "Division": models.HansardBlock.CATEGORY_DIVISION,
-    "Intervention": models.HansardBlock.CATEGORY_INTERVENTION,
-    "Intro": models.HansardBlock.CATEGORY_INTRO,
-    "MemberList": models.HansardBlock.CATEGORY_MEMBERLIST,
-    "Questioner": models.HansardBlock.CATEGORY_WRITTEN_QUESTION,
-    "Responder": models.HansardBlock.CATEGORY_WRITTEN_QUESTION,
-
-    "SubjectOfBusiness": models.HansardBlock.CATEGORY_UNKNOWN,
-    "SubjectOfBusinessContent": models.HansardBlock.CATEGORY_UNKNOWN,
-    "WrittenQuestionResponse": models.HansardBlock.CATEGORY_UNKNOWN,
+BoundaryCategories = namedtuple("BoundaryCategories", ("open_outer", "open_inner", "close_inner", "close_outer"))
+BOUNDARY_CATEGORIES = {
+    "Appendix": BoundaryCategories(None, models.HansardBlock.CATEGORY_ASIDES, models.HansardBlock.CATEGORY_ASIDES, None),
+    "AppendixContent": BoundaryCategories(None, models.HansardBlock.CATEGORY_ASIDES, models.HansardBlock.CATEGORY_ASIDES, None),
+    "Division": BoundaryCategories(None, models.HansardBlock.CATEGORY_DIVISION, models.HansardBlock.CATEGORY_DIVISION, None),
+    "Hansard": BoundaryCategories(None, models.HansardBlock.CATEGORY_UNEXPECTED, models.HansardBlock.CATEGORY_UNEXPECTED, None),
+    "HansardBody": BoundaryCategories(None, models.HansardBlock.CATEGORY_UNEXPECTED, models.HansardBlock.CATEGORY_UNEXPECTED, None),
+    "Intervention": BoundaryCategories(models.HansardBlock.CATEGORY_ASIDES, models.HansardBlock.CATEGORY_INTERVENTION, models.HansardBlock.CATEGORY_INTERVENTION, models.HansardBlock.CATEGORY_ASIDES),
+    "Intro": BoundaryCategories(None, models.HansardBlock.CATEGORY_ASIDES, models.HansardBlock.CATEGORY_ASIDES, None),
+    "MemberList": BoundaryCategories(None, models.HansardBlock.CATEGORY_MEMBERLIST, models.HansardBlock.CATEGORY_MEMBERLIST, None),
+    "MemberLists": BoundaryCategories(None, models.HansardBlock.CATEGORY_UNEXPECTED, models.HansardBlock.CATEGORY_UNEXPECTED, None),
+    "OrderOfBusiness": BoundaryCategories(None, models.HansardBlock.CATEGORY_UNEXPECTED, models.HansardBlock.CATEGORY_UNEXPECTED, None),
+    "QuestionContent": BoundaryCategories(None, None, models.HansardBlock.CATEGORY_WRITTEN_QUESTION, None),
+    "Responder": BoundaryCategories(None, models.HansardBlock.CATEGORY_WRITTEN_RESPONSE, None, None),
+    "ResponseContent": BoundaryCategories(None, None, models.HansardBlock.CATEGORY_WRITTEN_RESPONSE, None),
+    "SubjectOfBusiness": BoundaryCategories(None, models.HansardBlock.CATEGORY_ASIDES, models.HansardBlock.CATEGORY_ASIDES, None),
+    "SubjectOfBusinessContent": BoundaryCategories(None, None, models.HansardBlock.CATEGORY_ASIDES, None),
+    "WrittenQuestionResponse": BoundaryCategories(models.HansardBlock.CATEGORY_ASIDES, models.HansardBlock.CATEGORY_WRITTEN_QUESTION, models.HansardBlock.CATEGORY_UNEXPECTED, None),
 }
-TAGS_THAT_CLOSE_WITH_HANSARD_BLOCKS = {
-    "Appendix",
-    "Division",
-    "Intervention",
-    "Hansard",
-    "HansardBody",
-    "Intro",
-    "MemberList",
-    "MemberLists",
-    "OrderOfBusiness",
-    "SubjectOfBusiness",
-    "SubjectOfBusinessContent",
-    "QuestionContent",
-    "ResponseContent",
-    "WrittenQuestionResponse",
-}
+NotBoundary = BoundaryCategories(None, None, None, None)
 METADATA_TAGS = {
     "AppendixLabel",
     "AppendixTitle",
@@ -91,28 +83,36 @@ METADATA_TAGS = {
     "QuestionID",
     "SubjectOfBusinessQualifier",
     "SubjectOfBusinessTitle",
-    "Total",
     "Title",
+    "Total",
     "Type",
 }
 TAGS_THAT_KEEP_METADATA_ON_CLOSING = {
 }
 SUBJECTOFBUSINESS_METADATA = set([
-    "OrderOfBusiness-OrderOfBusinessTitle",
     "OrderOfBusiness-CatchLine",
     "OrderOfBusiness-OrderOfBusinessTitle",
+    "OrderOfBusiness-Rubric",
     "SubjectOfBusiness-CatchLine",
     "SubjectOfBusiness-SubjectOfBusinessQualifier",
     "SubjectOfBusiness-SubjectOfBusinessTitle",
 ])
+APPENDIX_METADATA = set([
+    "Appendix-AppendixTitle",
+    "Appendix-AppendixLabel",
+])
 EXPECTED_METADATA = {
-    "Intervention opening": SUBJECTOFBUSINESS_METADATA,
-    "Intervention closing": SUBJECTOFBUSINESS_METADATA | set(["Appendix-AppendixTitle", "Appendix-AppendixLabel"]),
+    "AppendixContent closing": APPENDIX_METADATA,
     "Division closing": SUBJECTOFBUSINESS_METADATA | set(["Division-DivisionNumber"]),
+    "Division opening": SUBJECTOFBUSINESS_METADATA,
+    "Intervention closing": SUBJECTOFBUSINESS_METADATA | APPENDIX_METADATA,
+    "Intervention opening": SUBJECTOFBUSINESS_METADATA | APPENDIX_METADATA,
+    "MemberList closing": set(["MemberLists-MemberListsLabel", "MemberList-LabelLine", "MemberList-Note", "MemberLists-MemberListsTitle"]),
     "QuestionContent closing": SUBJECTOFBUSINESS_METADATA | set(["WrittenQuestionResponse-QuestionID"]),
     "ResponseContent closing": SUBJECTOFBUSINESS_METADATA | set(["WrittenQuestionResponse-QuestionID"]),
-    "MemberList closing": set(["MemberLists-MemberListsLabel", "MemberList-LabelLine", "MemberList-Note", "MemberLists-MemberListsTitle"]),
+    "SubjectOfBusiness closing": SUBJECTOFBUSINESS_METADATA,
     "SubjectOfBusinessContent closing": SUBJECTOFBUSINESS_METADATA,
+    "WrittenQuestionResponse opening": SUBJECTOFBUSINESS_METADATA,
 }
 STRIPPED_TAGS = {
     "Corrigendum",
@@ -174,6 +174,7 @@ HTML_MAPPING = {
     "tgroup": TagMapping(None, ""),
 }
 assert not METADATA_TAGS & set(HTML_MAPPING), METADATA_TAGS & set(HTML_MAPPING)
+assert not METADATA_TAGS & set(BOUNDARY_CATEGORIES), METADATA_TAGS & set(BOUNDARY_CATEGORIES)
 
 
 # Mapping person speaking names to parliamentarians
@@ -290,17 +291,14 @@ class Command(BaseCommand):
             logger.setLevel(logging.DEBUG)
 
         for sitting in tqdm(
-            models.Sitting.objects.filter(links__contains=sources.NAME_HOC_HANSARD_XML[EN]),
+            models.Sitting.objects.filter(links__contains=sources.NAME_HOC_HANSARD_XML[EN], slug="37-1-174"),
             desc="Fetch Hansards, HoC",
             unit="sitting",
         ):
             try:
                 self.fetch_hansard(sitting)
-                print()
-                print(sitting, sitting.links[EN][sources.NAME_HOC_HANSARD_XML[EN]])
             except:
-                print()
-                print(sitting, sitting.links[EN][sources.NAME_HOC_HANSARD_XML[EN]])
+                logger.exception(sitting, sitting.links[EN][sources.NAME_HOC_HANSARD_XML[EN]])
                 raise
 
     @transaction.atomic
@@ -310,7 +308,7 @@ class Command(BaseCommand):
         self.tree = {
             lang: etree.ElementTree(etree.fromstring(fetch_url(
                 sitting.links[lang][sources.NAME_HOC_HANSARD_XML[lang]],
-            ).replace("""<?xml version="1.0" encoding="UTF-8"?>\n""", "")))
+            )))
             for lang in (EN, FR)
         }
 
@@ -319,6 +317,7 @@ class Command(BaseCommand):
             strip_empty_elements(self.tree[lang].getroot())
             for duplicate in self.tree[lang].xpath("//PersonSpeaking/Affiliation[2]"):
                 duplicate.getparent().remove(duplicate)
+            merge_adjacent_quotes(self.tree[lang].getroot())
 
         # If the structure checks out, parse down from the root
         self.floor_language = None
@@ -353,10 +352,11 @@ class Command(BaseCommand):
             element.attrib[PARSED] = "True"
 
         #
-        is_boundary_tag = element.tag in TAGS_THAT_OPEN_WITH_HANSARD_BLOCKS
-        if is_boundary_tag:
+        is_boundary_tag = element.tag in BOUNDARY_CATEGORIES
+        if is_boundary_tag and BOUNDARY_CATEGORIES.get(element.tag, NotBoundary).open_outer or BOUNDARY_CATEGORIES.get(element.tag, NotBoundary).open_inner:
+            self.set_hansard_block_category(BOUNDARY_CATEGORIES[element.tag].open_outer)
             self.save_hansard_block(f"{element.tag} opening")
-            self.hansard_block.category = TAGS_THAT_OPEN_WITH_HANSARD_BLOCKS[element.tag]
+            self.set_hansard_block_category(BOUNDARY_CATEGORIES[element.tag].open_inner)
 
         # Custom element openings
         parse_open = getattr(self, f"{element.tag.lower()}_open", None)
@@ -378,6 +378,9 @@ class Command(BaseCommand):
         else:
             child_responses = self.parse_children(element, lang, is_boundary_tag)
 
+        if is_boundary_tag:
+            self.set_hansard_block_category(BOUNDARY_CATEGORIES[element.tag].close_inner)
+
         # Custom element closings
         parse_close_func = getattr(self, f"{element.tag.lower()}_close", None)
         if parse_close_func:
@@ -390,17 +393,24 @@ class Command(BaseCommand):
                 lang: "".join(content)
                 for lang, content in child_responses.items()
             }
-            return {}
-        elif element.tag in TAGS_THAT_CLOSE_WITH_HANSARD_BLOCKS:
+            response = {}
+        elif is_boundary_tag and BOUNDARY_CATEGORIES.get(element.tag, NotBoundary).close_inner or BOUNDARY_CATEGORIES.get(element.tag, NotBoundary).close_outer:
             assert not any(content for lang, content in child_responses.items()), "Unparsed content for boundary tag?"
+            self.set_hansard_block_category(BOUNDARY_CATEGORIES[element.tag].close_inner)
             self.save_hansard_block(f"{element.tag} closing")
+            self.set_hansard_block_category(BOUNDARY_CATEGORIES[element.tag].close_outer)
+            response = {}
         elif element.tag in HTML_MAPPING:
             response = {
                 lang: "".join((
-                    """<{html_tag} class="{xml_tag}"{data_lang}>""".format(
+                    """<{html_tag} class="{xml_tag}"{data}>""".format(
                         html_tag=HTML_MAPPING[element.tag].wrapper,
                         xml_tag=element.tag.lower(),
-                        data_lang=f' data-language="{self.floor_language}"' if HTML_MAPPING[element.tag].wrapper in ("p", "blockquote") else "",
+                        data="".join(filter(None, (
+                            f' data-language="{self.floor_language}"' if HTML_MAPPING[element.tag].wrapper in ("p", "blockquote") else None,
+                            f' data-toctype="{element.attrib["ToCType"]}"' if "ToCType" in element.attrib else None,
+                            f' data-type="{element.attrib["Type"]}"' if "Type" in element.attrib else None,
+                        )))
                     ) if HTML_MAPPING[element.tag].wrapper and not force_unwrapped else "",
                     HTML_MAPPING[element.tag].joiner.join(content).strip(),
                     """</{html_tag}>""".format(
@@ -409,12 +419,13 @@ class Command(BaseCommand):
                 ))
                 for lang, content in child_responses.items()
             }
-            return response
         else:
-            raise Exception(f"UNEXPECTED TAG (not boundary or html): {element.tag}")
-        if element.tag not in TAGS_THAT_KEEP_METADATA_ON_CLOSING:
+            raise Exception(f"UNEXPECTED TAG (not metadata/boundary/html): {element.tag}")
+
+        if element.tag not in METADATA_TAGS and element.tag not in TAGS_THAT_KEEP_METADATA_ON_CLOSING:
             self.clear_metadata(element.tag)
-        return {}
+
+        return response
 
     def get_french_element(self, el_en, by_attrib=None):
         if by_attrib:
@@ -422,12 +433,12 @@ class Command(BaseCommand):
         else:
             return one_or_none(self.tree[FR].xpath(self.tree[EN].getpath(el_en)))
 
-    def parse_children(self, element, selected_lang, is_boundary_tag=False):
+    def parse_children(self, element, selected_lang, element_has_hansard_block=False):
         response = defaultdict(list)
         for child in element.xpath("child::node()"):
             parsed = self.parse_element(child, selected_lang)
             for lang, content in parsed.items():
-                if is_boundary_tag:
+                if element_has_hansard_block:
                     self.hansard_block.content[lang].append(content)
                 else:
                     response[lang].append(content)
@@ -443,10 +454,15 @@ class Command(BaseCommand):
             slug="{}-{}".format(self.sitting.slug, self.hansard_block_number),
             start_approx=self.timestamp,
             previous=self.previous_hansard_block,
-            category=models.HansardBlock.CATEGORY_UNKNOWN,
+            category=None,
             content={EN: [], FR: []},
             metadata={EN: {}, FR: {}},
         )
+
+    def set_hansard_block_category(self, category):
+        if category and category != self.hansard_block.category:
+            assert not self.hansard_block.category, f"Category already set to {self.hansard_block.get_category_display()} and then tried to set to {category}"
+            self.hansard_block.category = category
 
     def save_hansard_block(self, reason="No reason supplied"):
         if any(content for lang, content in self.hansard_block.content.items()):
@@ -460,17 +476,19 @@ class Command(BaseCommand):
                 for k, v in self.metadata.items()
             }
             unexpected_metadata = set(self.hansard_block.metadata.keys()) - EXPECTED_METADATA.get(reason, set())
-            if unexpected_metadata:
-                print(reason, unexpected_metadata)
-            self.hansard_block.metadata["reason"] = reason
-            self.hansard_block.metadata["person_speaking"] = self.person_speaking
+            assert not unexpected_metadata, f"{reason}, {unexpected_metadata}, {self.hansard_block.content[EN]}"
+            self.hansard_block.metadata["Intervention-PersonSpeaking"] = self.person_speaking
+            if self.hansard_block.category == models.HansardBlock.CATEGORY_UNEXPECTED:
+                logger.warning("UNEXPECTED", reason, self.hansard_block.content)
             self.hansard_block.save()
-
             self.previous_hansard_block = self.hansard_block
             self.hansard_block = None
-            self.person_speaking = None
-            self.parliamentarian = None
+
             self.new_hansard_block()
+        else:
+            self.hansard_block.category = None
+        self.person_speaking = None
+        self.parliamentarian = None
 
     def assert_no_stray_content(self):
         for lang, content in self.hansard_block.content.items():
@@ -507,6 +525,9 @@ class Command(BaseCommand):
 
     # Opening handlers
     # ------------------------------------------------------------------------
+
+    def orderofbusiness_open(self, element, lang):
+        self.metadata[(element.tag, "Rubric")] = element.attrib["Rubric"]
 
     def startpagenumber_open(self, element, lang):
         return {}
@@ -567,12 +588,13 @@ class Command(BaseCommand):
                                     normalize_whitespace(match.groupdict()["name"], strip=True),
                                 )
                             except AssertionError:
-                                print("UNMATCHED SPEAKER", self.sitting, affiliation.attrib, [self.person_speaking[EN], match.groupdict()["name"].strip()], element.getparent().attrib)
+                                logger.warning("UNMATCHED SPEAKER", self.sitting, affiliation.attrib, [self.person_speaking[EN], match.groupdict()["name"].strip()], element.getparent().attrib)
                             break
                     else:
-                        print("SPEAKER FORMAT MISMATCH", self.sitting, [self.person_speaking[EN]], element.getparent().attrib)
+                        logger.warning("SPEAKER FORMAT MISMATCH", self.sitting, [self.person_speaking[EN]], element.getparent().attrib)
                 if self.parliamentarian:
                     CACHED_PARLIAMENTARIANS[affiliation.attrib["DbId"]].add(self.parliamentarian)
+        return {}
 
     def questioner_open(self, *args):
         return self.personspeaking_open(*args)
@@ -597,6 +619,15 @@ class Command(BaseCommand):
         for lang, content in child_responses.items():
             self.hansard_block.content[lang].append("".join(content))
 
+    def affiliationgroup_close(self, element, lang, child_responses):
+        for lang, content in child_responses.items():
+            self.hansard_block.content[lang].append("".join((
+                """<span class="title">{}</span>""".format(self.metadata.get(("AffiliationGroup", "Title"), {}).get(lang, "")),
+                """<span class="total">{}</span""".format(self.metadata.get(("AffiliationGroup", "Total"), {}).get(lang, "")),
+                """<ul>{}</ul>""".format("".join(f"<li>{c}</li>" for c in content)),
+            )))
+        self.clear_metadata("AffiliationGroup")
+
     def divisiontype_close(self, element, lang, child_responses):
         for lang, content in child_responses.items():
             self.hansard_block.content[lang].append("".join((
@@ -617,6 +648,28 @@ def normalize_whitespace(content, strip):
             lang: normalize_whitespace(string, strip)
             for lang, string in content.items()
         }
+
+
+def merge_adjacent_quotes(element):
+    if isinstance(element, _ElementUnicodeResult):
+        return
+
+    children = list(element)
+    for left, right in zip(children[:-1], children[1:]):
+        if all((
+            left.tag == right.tag,
+            set(map(lambda child: child.tag, list(left))) in (set(["Quote"]), set(["QuotePara"])),
+            set(map(lambda child: child.tag, list(right))) in (set(["Quote"]), set(["QuotePara"])),
+            not left.text,
+            not right.text,
+        )):
+            print("MERGING", left, left.attrib, right, right.attrib)
+            for child in reversed(left):
+                right.insert(0, child)
+            left.getparent().remove(left)
+
+    for child in element:
+        merge_adjacent_quotes(child)
 
 
 def strip_empty_elements(element):

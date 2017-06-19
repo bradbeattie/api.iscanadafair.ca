@@ -41,7 +41,7 @@ class Command(BaseCommand):
 
             # LoP index
             lop_index_end = BeautifulSoup(fetch_url(
-                "http://www.lop.parl.gc.ca/parlinfo/Compilations/ElectionsAndRidings/Elections.aspx?Menu=ElectionsRidings-Election",
+                "https://lop.parl.ca/parlinfo/Compilations/ElectionsAndRidings/Elections.aspx?Menu=ElectionsRidings-Election",
             ), "html.parser")
             for row in lop_index_end.select("#ctl00_cphContent_grdElections tr"):
                 if row.find("td"):
@@ -51,7 +51,7 @@ class Command(BaseCommand):
 
             # Cache Library of Parliament dates
             lop_index_start = BeautifulSoup(fetch_url(
-                "http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=G",
+                "https://lop.parl.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=G",
             ), "html.parser")
             for option in lop_index_start.select("select[name=genElection] > option"):
                 number = int(option.attrs["value"])
@@ -82,8 +82,7 @@ class Command(BaseCommand):
 
     def fetch_general_election(self, parliament):
         logger.debug("Fetching general election, {}".format(parliament))
-        url = "http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Search=Gres&genElection={}".format(parliament.number)
-        fetch_url(url)
+        url = "https://lop.parl.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Search=Gres&genElection={}".format(parliament.number)
         election = models.GeneralElection(
             number=parliament.number,
             parliament=parliament,
@@ -103,7 +102,7 @@ class Command(BaseCommand):
 
     def fetch_by_elections(self, parliament):
         logger.debug("Fetching by-elections, {}".format(parliament))
-        url = "http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=Bres&genElection={}".format(parliament.number)
+        url = "https://lop.parl.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=Bres&genElection={}".format(parliament.number)
 
         # Caching for later use
         soup = BeautifulSoup(fetch_url(url), "html.parser")
@@ -113,6 +112,7 @@ class Command(BaseCommand):
             dates.add(dateparse(LOP_ROW_RIDING.search(row.text.strip()).groupdict()["date"]))
         for date in dates:
             models.ByElection.objects.get_or_create(
+                slug=f"{parliament.number}-{date}",
                 parliament=parliament,
                 date=date,
                 links={

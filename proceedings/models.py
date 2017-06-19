@@ -163,6 +163,7 @@ class HouseVoteParticipant(models.Model):
     VOTE_ABSTAINED = 4
 
     house_vote = models.ForeignKey(HouseVote, related_name="house_vote_participants", db_index=True)
+    slug = models.SlugField(max_length=200, primary_key=True)
     parliamentarian = models.ForeignKey(parliament_models.Parliamentarian, related_name="house_vote_participants", db_index=True)
     party = models.ForeignKey(parliament_models.Party, related_name="house_vote_participants", null=True, db_index=True)
     recorded_vote = models.PositiveSmallIntegerField(choices=(
@@ -189,15 +190,13 @@ class HansardBlock(models.Model):
 
         * TODO: Describe all the problems with the inconsistent data
     """
-    CATEGORY_COMMITTEE = 1
-    CATEGORY_DIVISION = 2
-    CATEGORY_INTERVENTION = 3
-    CATEGORY_MEMBERLIST = 4
-    CATEGORY_WRITTEN_QUESTION = 5
-    CATEGORY_WRITTEN_RESPONSE = 6
-    CATEGORY_APPENDIX = 7
-    CATEGORY_INTRO = 9
-    CATEGORY_UNKNOWN = 8
+    CATEGORY_INTERVENTION = 1
+    CATEGORY_WRITTEN_QUESTION = 2
+    CATEGORY_WRITTEN_RESPONSE = 3
+    CATEGORY_DIVISION = 4
+    CATEGORY_MEMBERLIST = 5
+    CATEGORY_ASIDES = 6
+    CATEGORY_UNEXPECTED = 7
 
     slug = models.SlugField(max_length=200, primary_key=True)
     sitting = models.ForeignKey(Sitting, db_index=True)
@@ -209,15 +208,13 @@ class HansardBlock(models.Model):
     house_vote = models.OneToOneField(HouseVote, null=True, db_index=True, related_name="hansard_block")
     previous = models.OneToOneField("self", null=True, blank=True, related_name="next", db_index=True)
     category = models.PositiveSmallIntegerField(choices=(
-        (CATEGORY_COMMITTEE, "Committee"),
-        (CATEGORY_DIVISION, "Division"),
         (CATEGORY_INTERVENTION, "Intervention"),
-        (CATEGORY_MEMBERLIST, "Member List"),
         (CATEGORY_WRITTEN_QUESTION, "Written Question"),
         (CATEGORY_WRITTEN_RESPONSE, "Written Response"),
-        (CATEGORY_APPENDIX, "Appendix"),
-        (CATEGORY_INTRO, "Intro"),
-        (CATEGORY_UNKNOWN, "UNKNOWN!"),
+        (CATEGORY_DIVISION, "Division"),
+        (CATEGORY_MEMBERLIST, "Member List"),
+        (CATEGORY_ASIDES, "Asides"),
+        (CATEGORY_UNEXPECTED, "Unexpected"),
     ))
 
     class Meta:

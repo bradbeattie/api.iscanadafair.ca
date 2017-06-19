@@ -212,6 +212,7 @@ class Command(BaseCommand):
                 parliamentarian.links[lang][sources.NAME_HOC_VOTES[lang]] = urljoin(vote.links[lang][sources.NAME_HOC_VOTE_DETAILS[lang]], mp_link[lang].attrs["href"])
             parliamentarian.save()
         hvp.parliamentarian = parliamentarian
+        hvp.slug = f"{vote.slug}-{parliamentarian.slug}"
 
         try:
             party = get_cached_obj(self.cached_parties, PARTY_MAPPING.get(party_name, party_name))

@@ -92,7 +92,7 @@ class Command(BaseCommand):
                     )
                     party = election_candidates.first().party
 
-                    # http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=C says
+                    # https://lop.parl.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=C says
                     # "Some discrepancies in data may appear. Data appearing in the Federal Member Profile (biography)
                     # should be considered the authoritative source." So we might need to change the party noted from HFER
                     # to that detected through the Parliament file.
@@ -123,7 +123,7 @@ class Command(BaseCommand):
                         logger.debug("{}, mapping {} to {} via {}".format(parliament, party.slug, party_name, parliamentarian_name))
                         cached_parties[party_name] = party
 
-                    # http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=C says
+                    # https://lop.parl.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=C says
                     # "Some discrepancies in data may appear. Data appearing in the Federal Member Profile (biography)
                     # should be considered the authoritative source." So we might need to change the party noted from HFER
                     # to that detected through the Parliament file.

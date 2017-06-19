@@ -109,6 +109,7 @@ class Command(BaseCommand):
                 election_riding = models.ElectionRiding(
                     riding=riding,
                     date=election.date,
+                    slug="{}-{}".format(election.slug if hasattr(election, "slug") else election.number, riding.slug),
                     **kwargs,
                 )
                 if populations:
@@ -152,6 +153,7 @@ class Command(BaseCommand):
                 )
 
                 election_candidate = models.ElectionCandidate(
+                    slug="{}-{}".format(election_riding.slug, parliamentarian.slug if parliamentarian else slugify(name)),
                     election_riding=election_riding,
                     name=name,
                     parliamentarian=parliamentarian,
@@ -201,7 +203,7 @@ class Command(BaseCommand):
         except KeyError:
             party = Party()
             for lang in (EN, FR):
-                popup_soup = BeautifulSoup(fetch_url("http://www.lop.parl.gc.ca/About/Parliament/FederalRidingsHistory/hfer-party.asp?lang={}&Party={}".format(
+                popup_soup = BeautifulSoup(fetch_url("https://lop.parl.ca/About/Parliament/FederalRidingsHistory/hfer-party.asp?lang={}&Party={}".format(
                     sources.LANG_LOP[lang],
                     PARTY_POPUP.search(popup).groups()[0],
                 )), "html.parser")
