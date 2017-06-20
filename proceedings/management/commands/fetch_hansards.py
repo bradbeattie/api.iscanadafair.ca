@@ -537,7 +537,8 @@ class Command(BaseCommand):
             response = self.parse_element(quote, lang)
             if quote.tail is not None and quote.tail.strip() not in ("", "."):
                 for l, c in self.parse_text_node(quote.tail, lang).items():
-                    response[l] += c
+                    response[l] += f"""<p class="quote-tail" data-language="{self.floor_language}">{c}</p>"""
+            return response
 
     def startpagenumber_open(self, element, lang):
         return {}
