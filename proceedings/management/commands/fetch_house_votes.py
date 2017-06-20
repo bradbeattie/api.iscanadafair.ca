@@ -134,7 +134,7 @@ class Command(BaseCommand):
         soup = {}
         for lang in (EN, FR):
             soup[lang] = BeautifulSoup(
-                fetch_url(vote.links[lang][sources.NAME_HOC_VOTE_DETAILS[lang]]),
+                fetch_url(vote.links[lang][sources.NAME_HOC_VOTE_DETAILS[lang]], sometimes_refetch=False),
                 "html.parser",
             )
             details = one_or_none(soup[lang].select(".voteDetailsText"))

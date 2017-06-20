@@ -40,7 +40,7 @@ class FetchFailure(Exception):
     pass
 
 
-def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False, discard_content=False):
+def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False, discard_content=False, sometimes_refetch=True):
     global THROTTLE
     url_hash_cs = hashlib.sha512(url.encode()).hexdigest()
     url_hash_ci = hashlib.sha512(url.lower().encode()).hexdigest()
@@ -61,7 +61,7 @@ def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False, 
     if any((
         not os.path.exists(filename),
         not use_cache,
-        random.uniform(0, 1) > 0.999,
+        sometimes_refetch and random.uniform(0, 1) > 0.999,
     )):
         if mc.get(url_hash_cs):
             logger.warning("Fetch suppressed due to recent failure: {}".format(url))
@@ -74,7 +74,7 @@ def fetch_url(url, use_cache=True, allow_redirects=False, case_sensitive=False, 
                     "From": settings.ADMINS[0][1],
                     "User-Agent": "https://github.com/bradbeattie/canadian-parlimentarty-data",
                 })
-                if response.status_code in (200, 500):
+                if response.status_code in (200, 301, 302, 500):
                     break
                 logger.warning(f"Fetch returned status {response.status_code}")
             except requests.exceptions.ConnectionError as e:

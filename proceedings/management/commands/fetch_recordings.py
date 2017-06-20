@@ -52,6 +52,7 @@ STATUS_MAPPING = {
     "Adjourned": models.Recording.STATUS_ADJOURNED,
     "Cancelled": models.Recording.STATUS_CANCELLED,
     "Not Started": models.Recording.STATUS_NOT_STARTED,
+    "In Progress": models.Recording.STATUS_NOT_STARTED,
 }
 CATEGORY_MAPPING = {
     "thumbnail_audio_e_small.jpg": models.Recording.CATEGORY_AUDIO_ONLY,

@@ -1,10 +1,9 @@
 from collections import namedtuple, defaultdict
-from copy import copy
-from django.utils.timezone import make_aware
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Q
+from django.utils.timezone import make_aware
 from federal_common import sources
 from federal_common.sources import EN, FR, WHITESPACE
 from federal_common.utils import fetch_url, one_or_none, get_cached_dict, get_cached_obj, datetimeparse
@@ -407,6 +406,7 @@ class Command(BaseCommand):
                         html_tag=HTML_MAPPING[element.tag].wrapper,
                         xml_tag=element.tag.lower(),
                         data="".join(filter(None, (
+                            f' data-hansard-id="{element.attrib["id"]}"' if "id" in element.attrib else None,
                             f' data-language="{self.floor_language}"' if HTML_MAPPING[element.tag].wrapper in ("p", "blockquote") else None,
                             f' data-toctype="{element.attrib["ToCType"]}"' if "ToCType" in element.attrib else None,
                             f' data-type="{element.attrib["Type"]}"' if "Type" in element.attrib else None,
@@ -532,9 +532,12 @@ class Command(BaseCommand):
     def paratext_open(self, element, lang):
         quotes = element.xpath("Quote")
         if quotes:
-            assert len(quotes) == 1
-            assert quotes[0].tail is None
-            return self.parse_element(quotes[0], lang)
+            assert len(quotes) == 1, element.attrib
+            quote = quotes[0]
+            response = self.parse_element(quote, lang)
+            if quote.tail is not None and quote.tail.strip() not in ("", "."):
+                for l, c in self.parse_text_node(quote.tail, lang).items():
+                    response[l] += c
 
     def startpagenumber_open(self, element, lang):
         return {}
@@ -667,8 +670,8 @@ def merge_adjacent_quotes(element):
             left.tag == right.tag,
             set(map(lambda child: child.tag, list(left))) in (set(["Quote"]), set(["QuotePara"])),
             set(map(lambda child: child.tag, list(right))) in (set(["Quote"]), set(["QuotePara"])),
-            not left.text,
-            not right.text,
+            not (left.text or "").strip(),
+            not (right.text or "").strip(),
         )):
             for child in reversed(left):
                 right.insert(0, child)
