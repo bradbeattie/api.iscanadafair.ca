@@ -18,4 +18,4 @@ while I'm at it, I might as well expose the data for others via
 * [Download a snapshot of this database](https://github.com/bradbeattie/canadian-parliamentary-data/raw/master/deployed.sql.xz) if you're intending on making heavy use of the data.
 * If there's data you'd like to see included, either [create a new issue on the project's issue tracker](https://github.com/bradbeattie/canadian-parliamentary-data/issues/new) or send me an email at [bradbeattie@gmail.com](mailto:bradbeattie@gmail.com).
 
-![Webcam of parliament hill](http://www.tpsgc-pwgsc.gc.ca/citeparlementaire-parliamentaryprecinct/newhillcam.jpg)
+![Webcam of parliament hill](https://www.tpsgc-pwgsc.gc.ca/citeparlementaire-parliamentaryprecinct/newhillcam.jpg)
