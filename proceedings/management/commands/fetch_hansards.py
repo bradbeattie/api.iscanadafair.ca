@@ -177,7 +177,7 @@ assert not METADATA_TAGS & set(BOUNDARY_CATEGORIES), METADATA_TAGS & set(BOUNDAR
 
 
 # Mapping person speaking names to parliamentarians
-CACHED_PARLIAMENTARIANS = get_cached_dict(Parliamentarian.objects.filter(Q(birthtext__gte="1900") | Q(birthtext="")))
+CACHED_PARLIAMENTARIANS = get_cached_dict(Parliamentarian.objects.filter(Q(birthdate__gte="1900") | Q(birthdate="")))
 HONORIFICS = r"(?P<honorific>Mr|M|Ms|Mrs|Miss|Hon|Right Hon|L'hon)\.?"
 SPEAKER_FORMATS = [
     re.compile(r"^{} (?P<name>[^()]*)(?P<suffix> .*)?$".format(HONORIFICS)),

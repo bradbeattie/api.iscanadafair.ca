@@ -72,6 +72,10 @@ class Command(BaseCommand):
                     self.general_election_data[election_number]["ballots_total"] = int(cells[3].text.replace(",", ""))
                     self.general_election_data[election_number]["turnout"] = Decimal(cells[4].contents[0].replace(",", "")) / 100
 
+            # Returns
+            if election_number <= 34:
+                self.general_election_data[election_number]["returns"] = f"https://api.iscanadafair.ca/static/election-returns/{election_number}.pdf")
+
             # Fetch the parliaments using the cached data
             for parliament in tqdm(
                 parliaments,

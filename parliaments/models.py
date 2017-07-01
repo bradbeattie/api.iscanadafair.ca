@@ -94,9 +94,7 @@ class Parliamentarian(NamesMixin, LinksMixin, models.Model):
         * [Library of Parliament's History of Federal Ridings](https://lop.parl.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=C)
     """
     photo = models.ImageField(upload_to=get_photo_path)
-    birthtext = models.CharField(max_length=10, db_index=True, help_text="Exact birth dates for parliamentarians in the 1800s sometimes omitted day or month")
-    birthdate = models.DateField(null=True, db_index=True)
-    # TODO: Remove birthdate and rename birthtext to birthdate
+    birthdate = models.CharField(max_length=10, db_index=True, help_text="Exact birth dates for parliamentarians in the 1800s sometimes omitted day or month")
     lop_item_code = models.SlugField(db_index=True, unique=True)
     constituency_offices = json.JSONField()
     hill_phone = models.CharField(max_length=20, db_index=True)

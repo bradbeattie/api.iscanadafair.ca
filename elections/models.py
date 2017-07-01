@@ -20,6 +20,7 @@ class GeneralElection(models.Model):
     parliament = models.OneToOneField(parliament_models.Parliament, related_name="general_election", db_index=True)
     date_fuzz = models.DateField(help_text="TODO: Explain date problems", db_index=True)
     date = models.DateField(db_index=True)
+    returns = models.URLField()
     population = models.PositiveIntegerField(help_text="Aggregate", db_index=True)
     registered = models.PositiveIntegerField(help_text="Aggregate", db_index=True)
     ballots_total = models.PositiveIntegerField(help_text="Aggregate, includes rejected ballots", db_index=True)

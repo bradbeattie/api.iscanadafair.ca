@@ -7,7 +7,7 @@ from django.db import transaction
 from django.utils.text import slugify
 from federal_common import sources
 from federal_common.sources import EN, FR
-from federal_common.utils import fetch_url, url_tweak, dateparse
+from federal_common.utils import fetch_url, url_tweak
 from parliaments import models
 from tqdm import tqdm
 from urllib.parse import urljoin
@@ -76,8 +76,7 @@ class Command(BaseCommand):
                 parliamentarian.links[lang][sources.AVAILABILITY_WARNINGS.sub("", link.text.strip())] = link.attrs["href"]
         try:
             parliamentarian.lop_item_code = sources.LOP_CODE.search(url).group().lower()
-            parliamentarian.birthtext = soup.select("#ctl00_cphContent_DateOfBirthData")[0].text.strip().replace(".", "-")
-            parliamentarian.birthdate = dateparse(parliamentarian.birthtext)
+            parliamentarian.birthdate = soup.select("#ctl00_cphContent_DateOfBirthData")[0].text.strip().replace(".", "-")
         except:
             pass
 
