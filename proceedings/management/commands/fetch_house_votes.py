@@ -27,6 +27,7 @@ VOTE_MAPPING = {
 HONORIFIC = re.compile(r"^(Mr|Mrs|Ms)\. ")
 PARTY_MAPPING = {
     "Green Party": "gp",
+    "Conservative": "c",
 }
 WIDGET_ID = re.compile(r"/ParlDataWidgets/en/affiliation/([0-9]+)")
 RECORDED_VOTE_MAPPING = {

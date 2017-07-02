@@ -1,10 +1,10 @@
 from django.db import models
 from django_extensions.db.fields import json
-from federal_common.models import NamesMixin, LinksMixin
+from federal_common.models import NamesMixin, LinksMixin, SlugMixin
 from parliaments import models as parliament_models
 
 
-class Committee(NamesMixin, LinksMixin, models.Model):
+class Committee(SlugMixin, NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
@@ -26,7 +26,7 @@ class Committee(NamesMixin, LinksMixin, models.Model):
         ordering = ("slug", )
 
 
-class Sitting(LinksMixin, models.Model):
+class Sitting(SlugMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
@@ -36,7 +36,6 @@ class Sitting(LinksMixin, models.Model):
 
         * Some House Publication pages don't load properly (e.g. [Parliament 38, Session 1, Sitting 124A](http://www.ourcommons.ca/DocumentViewer/en/38-1/house/sitting-124A/journals)). I've contacted infonet@parl.gc.ca with these issues.
     """
-    slug = models.SlugField(max_length=200, primary_key=True)
     number = models.CharField(max_length=5, db_index=True)
     session = models.ForeignKey(parliament_models.Session, related_name="sittings", db_index=True)
     date = models.DateField(unique=True)
@@ -45,11 +44,8 @@ class Sitting(LinksMixin, models.Model):
         unique_together = ("session", "number")
         ordering = ("date", )
 
-    def __str__(self):
-        return self.slug
 
-
-class Recording(NamesMixin, LinksMixin, models.Model):
+class Recording(SlugMixin, NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
@@ -99,7 +95,7 @@ class Recording(NamesMixin, LinksMixin, models.Model):
         ordering = ("scheduled_start", "slug")
 
 
-class Bill(NamesMixin, LinksMixin, models.Model):
+class Bill(SlugMixin, NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
@@ -119,7 +115,7 @@ class Bill(NamesMixin, LinksMixin, models.Model):
         ordering = ("slug", )
 
 
-class HouseVote(LinksMixin, models.Model):
+class HouseVote(SlugMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
@@ -129,7 +125,6 @@ class HouseVote(LinksMixin, models.Model):
     RESULT_AGREED_TO = 2
     RESULT_TIE = 3
 
-    slug = models.SlugField(max_length=200, primary_key=True)
     sitting = models.ForeignKey(Sitting, related_name="house_votes", db_index=True)
     number = models.PositiveSmallIntegerField(db_index=True)
     bill = models.ForeignKey(Bill, blank=True, null=True, related_name="house_votes", db_index=True)
@@ -143,11 +138,8 @@ class HouseVote(LinksMixin, models.Model):
     class Meta:
         ordering = ("sitting__date", "slug")
 
-    def __str__(self):
-        return self.slug
 
-
-class HouseVoteParticipant(models.Model):
+class HouseVoteParticipant(SlugMixin, models.Model):
     """
         ## Data sources
 
@@ -163,7 +155,6 @@ class HouseVoteParticipant(models.Model):
     VOTE_ABSTAINED = 4
 
     house_vote = models.ForeignKey(HouseVote, related_name="house_vote_participants", db_index=True)
-    slug = models.SlugField(max_length=200, primary_key=True)
     parliamentarian = models.ForeignKey(parliament_models.Parliamentarian, related_name="house_vote_participants", db_index=True)
     party = models.ForeignKey(parliament_models.Party, related_name="house_vote_participants", null=True, db_index=True)
     recorded_vote = models.PositiveSmallIntegerField(choices=(
@@ -177,10 +168,10 @@ class HouseVoteParticipant(models.Model):
         unique_together = ("house_vote", "parliamentarian")
 
     def __str__(self):
-        return "{}, {}, {}".format(self.house_vote, self.get_recorded_vote_display())
+        return "{}, {}".format(self.house_vote, self.get_recorded_vote_display())
 
 
-class HansardBlock(models.Model):
+class HansardBlock(SlugMixin, models.Model):
     """
         ## Data sources
 
@@ -198,7 +189,6 @@ class HansardBlock(models.Model):
     CATEGORY_ASIDES = 6
     CATEGORY_UNEXPECTED = 7
 
-    slug = models.SlugField(max_length=200, primary_key=True)
     sitting = models.ForeignKey(Sitting, db_index=True)
     number = models.PositiveIntegerField(db_index=True)
     start_approx = models.DateTimeField(db_index=True)
@@ -221,6 +211,3 @@ class HansardBlock(models.Model):
         index_together = ("start_approx", "number")
         unique_together = ("sitting", "number")
         ordering = ("start_approx", "number")
-
-    def __str__(self):
-        return self.slug

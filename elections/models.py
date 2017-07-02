@@ -1,4 +1,5 @@
 from django.db import models
+from federal_common.models import SlugMixin
 from federal_common.sources import EN, FR
 from parliaments import models as parliament_models
 from django_extensions.db.fields import json
@@ -41,13 +42,12 @@ class GeneralElection(models.Model):
         }[lang]
 
 
-class ByElection(models.Model):
+class ByElection(SlugMixin, models.Model):
     """
         ## Data sources
 
         * [Library of Parliament's By-Elections](https://lop.parl.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=B)
     """
-    slug = models.SlugField(max_length=200, primary_key=True)
     parliament = models.ForeignKey(parliament_models.Parliament, related_name="by_elections", db_index=True)
     date = models.DateField(db_index=True)
     links = json.JSONField()
@@ -65,7 +65,7 @@ class ByElection(models.Model):
         return "By-Election ({})".format(self.date)
 
 
-class ElectionRiding(models.Model):
+class ElectionRiding(SlugMixin, models.Model):
     """
         ## Data sources
 
@@ -79,7 +79,6 @@ class ElectionRiding(models.Model):
     """
     general_election = models.ForeignKey(GeneralElection, related_name="election_ridings", null=True, db_index=True)
     by_election = models.ForeignKey(ByElection, related_name="election_ridings", null=True, db_index=True)
-    slug = models.SlugField(max_length=200, primary_key=True)
     date = models.DateField(db_index=True)
     riding = models.ForeignKey(parliament_models.Riding, related_name="election_ridings", db_index=True)
     ballots_rejected = models.PositiveIntegerField(null=True, db_index=True)
@@ -106,7 +105,7 @@ class ElectionRiding(models.Model):
         return super().save(*args, **kwargs)
 
 
-class ElectionCandidate(models.Model):
+class ElectionCandidate(SlugMixin, models.Model):
     """
         ## Data sources
 
@@ -117,7 +116,6 @@ class ElectionCandidate(models.Model):
         * A candidate might run in one election as John Doe, but in the next as Jonny Doe. More frustrating still, a John Doe may run in one election, and a different John Doe in the next election in the same riding. [The Library of Parliament's History of Federal Ridings (HFER)](https://lop.parl.ca/About/Parliament/FederalRidingsHistory/HFER.asp) doesn't uniquely identify candidates and the research involved in doing so is well beyond the scope of this project. As such, only candidates that win are linked with their [parliamentarian](/parliamentarians/) object as per the available data. This means that looking at a parliamentarian, one can't get the list of failed candidacies as I don't have a solid enough source for that. Omitting spotty data seems a safer bet than including it.
         * Historically, a candidate's party affilialtion might be harder to deduce than one might expect. Take the case of [Norman James Macdonald Lockhart](https://lop.parl.ca/parlinfo/Files/Parliamentarian.aspx?Item=8071f7cb-6056-4879-99dc-e913be0cb2ec) who runs in the 19th General Election [as a member of the National Government Party](https://lop.parl.ca/About/Parliament/FederalRidingsHistory/hfer.asp?Language=E&Search=Gres&genElection=19&ridProvince=9), yet appears in ParlInfo [as a member of the Conservative Party (1867-1942)](https://lop.parl.ca/parlinfo/Files/Parliament.aspx?Item=09eeff1b-e930-4148-b062-729f06cd6860&Language=E&Section=Elections). Dave Tessier, ParlInfo Coordinator, explains: *A word of caution; the early elections were very difficult to compile and if you research other sources you will indeed find conflicting information at times. We focused on the most authoritative sources at our disposal during the time that this data was assembled, and when we discovered a conflict we simply tried to determine which information was the most reliable. Further, party affiliations in the early years are very difficult if not impossible to determine. Although not always clear, you can assume that HFER shows the "candidate affiliation" and the Parliamentarian file will show the affiliation in the House of Commons. Some of the affiliations for the earlier parliaments where very difficult to confirm.*
     """
-    slug = models.SlugField(max_length=200, primary_key=True)
     election_riding = models.ForeignKey(ElectionRiding, related_name="election_candidates", db_index=True)
     name = models.CharField(max_length=200, db_index=True)
     parliamentarian = models.ForeignKey(parliament_models.Parliamentarian, related_name="election_candidates", null=True, db_index=True)

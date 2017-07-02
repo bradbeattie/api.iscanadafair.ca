@@ -1,5 +1,6 @@
 *.pyc
 *.sql
+*.sql.xz
 *.sqlite
 *.swp
 .collected_static

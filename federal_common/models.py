@@ -14,15 +14,21 @@ class LinksMixin(models.Model):
         self.links = self.links or {EN: {}, FR: {}}
 
 
-class NamesMixin(models.Model):
+class SlugMixin(models.Model):
     slug = models.SlugField(max_length=200, primary_key=True)
-    names = json.JSONField()
 
     class Meta:
         abstract = True
 
     def __str__(self):
         return self.slug
+
+
+class NamesMixin(models.Model):
+    names = json.JSONField()
+
+    class Meta:
+        abstract = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

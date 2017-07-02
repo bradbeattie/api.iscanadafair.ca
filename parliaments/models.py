@@ -1,11 +1,11 @@
 from django.db import models
 from django.utils.html import format_html
 from django_extensions.db.fields import json
-from federal_common.models import NamesMixin, LinksMixin
+from federal_common.models import NamesMixin, LinksMixin, SlugMixin
 import os
 
 
-class Party(NamesMixin, LinksMixin, models.Model):
+class Party(SlugMixin, NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
@@ -44,13 +44,12 @@ class Parliament(LinksMixin, models.Model):
         return "Parliament {}".format(self.number)
 
 
-class Session(LinksMixin, models.Model):
+class Session(SlugMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
         * [Library of Parliament's Parliament Profiles](https://lop.parl.ca/parlinfo/Lists/Parliament.aspx)
     """
-    slug = models.SlugField(max_length=200, primary_key=True)
     parliament = models.ForeignKey(Parliament, related_name="sessions", db_index=True)
     number = models.PositiveSmallIntegerField(db_index=True)
     date_start = models.DateField(db_index=True)
@@ -62,11 +61,8 @@ class Session(LinksMixin, models.Model):
         unique_together = ("parliament", "number")
         ordering = ("parliament__number", "number")
 
-    def __str__(self):
-        return self.slug
 
-
-class Province(NamesMixin, LinksMixin, models.Model):
+class Province(SlugMixin, NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
@@ -85,7 +81,7 @@ def get_photo_path(instance, filename):
     )
 
 
-class Parliamentarian(NamesMixin, LinksMixin, models.Model):
+class Parliamentarian(SlugMixin, NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
@@ -113,7 +109,7 @@ class Parliamentarian(NamesMixin, LinksMixin, models.Model):
         ordering = ("slug", )
 
 
-class Riding(NamesMixin, LinksMixin, models.Model):
+class Riding(SlugMixin, NamesMixin, LinksMixin, models.Model):
     """
         ## Data sources
 
