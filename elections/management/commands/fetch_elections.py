@@ -74,7 +74,7 @@ class Command(BaseCommand):
 
             # Returns
             if election_number <= 34:
-                self.general_election_data[election_number]["returns"] = f"https://api.iscanadafair.ca/static/election-returns/{election_number}.pdf")
+                self.general_election_data[election_number]["returns"] = f"https://api.iscanadafair.ca/static/election-returns/{election_number}.pdf"
 
             # Fetch the parliaments using the cached data
             for parliament in tqdm(
