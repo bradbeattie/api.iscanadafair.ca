@@ -1,9 +1,7 @@
 from bs4 import BeautifulSoup
-from collections import defaultdict
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from federal_common.sources import EN
-from federal_common.utils import fetch_url
+from federal_common.utils import fetch_url, get_cached_dict, get_cached_obj
 from parliaments import models
 from tqdm import tqdm
 from urllib.parse import urljoin
@@ -25,22 +23,6 @@ class Command(BaseCommand):
         if options["verbosity"] > 1:
             logger.setLevel(logging.DEBUG)
 
-        riding_id_to_riding = {}
-        for parliamentarian in models.Parliamentarian.objects.filter(
-            election_candidates__election_riding__date__year__gte=2000,
-        ).distinct():
-            for url in parliamentarian.links[EN].values():
-                match = URL.search(url)
-                if match:
-                    riding_id_to_riding[int(match.groups()[0])] = parliamentarian.riding
-                    break
-
-        for riding_id, fsas in self.get_riding_id_to_fsas().items():
-            riding = riding_id_to_riding[riding_id]
-            riding.postal_code_fsas = sorted(fsas)
-            riding.save()
-
-    def get_riding_id_to_fsas(self):
         fsas = set()
         index_url = "https://en.wikipedia.org/wiki/List_of_postal_codes_in_Canada"
         index_all = BeautifulSoup(fetch_url(index_url), "html.parser")
@@ -50,14 +32,28 @@ class Command(BaseCommand):
                 if cssutils.parseStyle(fsa.parent.attrs.get("style", "")).color != "#CCC":
                     fsas.add(fsa.text)
 
-        riding_id_to_fsas = defaultdict(set)
+        cached_ridings = get_cached_dict(models.Riding.objects.filter(election_ridings__date__year__gte=2015))
+        person_id_to_riding = {}
+        for person in BeautifulSoup(
+            fetch_url("http://www.ourcommons.ca/Parliamentarians/en/floorplan"),
+            "html.parser",
+        ).select(".FloorPlanSeat .Person"):
+            riding = get_cached_obj(cached_ridings, person.attrs["constituencyname"])
+            person_id_to_riding[int(person.attrs["personid"])] = riding
+            riding.post_code_fsas = set()
+
         for fsa in tqdm(fsas):
             result = fetch_url("http://www.ourcommons.ca/Parliamentarians/en/FloorPlan/FindMPs?textCriteria={}".format(fsa))
             try:
                 result = result.decode()
             except AttributeError:
                 pass
-            for riding_id in filter(None, result.split(",")):
-                riding_id_to_fsas[int(riding_id)].add(fsa)
+            for person_id in filter(None, result.split(",")):
+                try:
+                    person_id_to_riding[int(person_id)].post_code_fsas.add(fsa)
+                except:
+                    logger.warning(f"Person ID {person_id} expected for FSA {fsa}, but that wasn't found in the floorplan")
 
-        return riding_id_to_fsas
+        for riding in person_id_to_riding.values():
+            riding.post_code_fsas = sorted(riding.post_code_fsas)
+            riding.save()

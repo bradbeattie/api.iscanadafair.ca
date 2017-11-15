@@ -171,11 +171,11 @@ class HouseVoteParticipant(SlugMixin, models.Model):
         return "{}, {}".format(self.house_vote, self.get_recorded_vote_display())
 
 
-class HansardBlock(SlugMixin, models.Model):
+class PublicationBlock(SlugMixin, models.Model):
     """
         ## Data sources
 
-        * [House of Commons' Hansard XML (39th Parliament onwards)](http://www.ourcommons.ca/documentviewer/en/house/latest-sitting)
+        * [House of Commons' Hansard XML (39th Parliament onwards)](http://www.ourcommons.ca/Parliamentarians/en/PublicationSearch)
 
         ## Notes
 
@@ -189,13 +189,15 @@ class HansardBlock(SlugMixin, models.Model):
     CATEGORY_ASIDES = 6
     CATEGORY_UNEXPECTED = 7
 
-    sitting = models.ForeignKey(Sitting, db_index=True)
+    sitting = models.ForeignKey(Sitting, null=True, db_index=True)
+    committee = models.ForeignKey(Committee, related_name="publication_blocks", null=True, db_index=True)
     number = models.PositiveIntegerField(db_index=True)
-    start_approx = models.DateTimeField(db_index=True)
+    date_start = models.DateTimeField(db_index=True)
     metadata = json.JSONField()
     content = json.JSONField()
-    parliamentarian = models.ForeignKey(parliament_models.Parliamentarian, related_name="hansard_blocks", null=True, db_index=True)
-    house_vote = models.OneToOneField(HouseVote, null=True, db_index=True, related_name="hansard_block")
+    name = models.CharField(max_length=200, db_index=True)
+    parliamentarian = models.ForeignKey(parliament_models.Parliamentarian, related_name="publication_blocks", null=True, db_index=True)
+    house_vote = models.OneToOneField(HouseVote, null=True, db_index=True, related_name="publication_block")
     previous = models.OneToOneField("self", null=True, blank=True, related_name="next", db_index=True)
     category = models.PositiveSmallIntegerField(choices=(
         (CATEGORY_INTERVENTION, "Intervention"),
@@ -208,6 +210,5 @@ class HansardBlock(SlugMixin, models.Model):
     ))
 
     class Meta:
-        index_together = ("start_approx", "number")
-        unique_together = ("sitting", "number")
-        ordering = ("start_approx", "number")
+        unique_together = ("sitting", "committee", "number")
+        ordering = ("date_start", )

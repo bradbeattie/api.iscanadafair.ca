@@ -82,9 +82,7 @@ class Command(BaseCommand):
                             sitting.links[EN][sources.NAME_OP[EN]] = f"https://openparliament.ca/debates/{sitting.date.year}/{sitting.date.month}/{sitting.date.day}/"
                 xml_button = one_or_none(soup.select(".btn-export-xml"))
                 if xml_button:
-                    xml_url = urljoin(sitting_url, xml_button.attrs["href"])
-                    sitting.links[lang][sources.NAME_HOC_HANSARD_XML[lang]] = xml_url
-                    fetch_url(xml_url, discard_content=True)
+                    sitting.links[lang][sources.NAME_HOC_HANSARD_XML[lang]] = urljoin(sitting_url, xml_button.attrs["href"])
                 if lang == EN:
                     sitting_url = get_french_parl_url(sitting_url, soup)
             sitting.save()
